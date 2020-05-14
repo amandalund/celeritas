@@ -10,11 +10,33 @@
 #include <cstdlib>
 #include <string>
 
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+
 namespace
 {
+bool determine_use_color(FILE* stream)
+{
+    int fn = fileno(stream);
+    if (!isatty(fn))
+        return false;
+
+    const char* term = std::getenv("TERM");
+    if (!term)
+        return false;
+
+    if (strstr("xterm", term) == 0)
+        return true;
+
+    // Other checks here? ...
+
+    return false;
+}
+
 bool use_color()
 {
-    static bool result = (std::getenv("GTEST_COLOR") != nullptr);
+    const static bool result = determine_use_color(stdout);
     return result;
 }
 } // namespace
@@ -25,7 +47,13 @@ namespace detail
 {
 //---------------------------------------------------------------------------//
 /*!
- * Get an ANSI color code for [y]ellow / [r]ed / [d]efault.
+ * Get an ANSI color codes if colors are enabled.
+ *
+ *  - [y]ellow
+ *  - [g]reen
+ *  - [r]ed
+ *  - [x] gray
+ *  - [ ] default.
  */
 const char* color_code(char abbrev)
 {
@@ -34,13 +62,17 @@ const char* color_code(char abbrev)
 
     switch (abbrev)
     {
-        case 'y':
-            return "\033[33m";
+        case 'g':
+            return "\e[32m";
         case 'r':
-            return "\033[31m";
+            return "\e[31m";
+        case 'x':
+            return "\e[37;2m";
+        case 'y':
+            return "\e[33m";
         case ' ':
             // Reset color
-            return "\033[0m";
+            return "\e[0m";
     }
 
     // Unknown color code: ignore

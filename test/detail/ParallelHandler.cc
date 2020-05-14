@@ -7,6 +7,7 @@
 //---------------------------------------------------------------------------//
 #include "ParallelHandler.hh"
 
+#include "Utils.hh"
 #include "comm/Communicator.hh"
 
 namespace celeritas
@@ -25,14 +26,17 @@ ParallelHandler::ParallelHandler(const Communicator& comm) : comm_(comm) {}
  */
 void ParallelHandler::OnTestProgramStart(const ::testing::UnitTest&)
 {
-    std::cout << "Testing "
+    if (comm_.rank() == 0)
+    {
+        std::cout << color_code('x') << "Testing "
 #ifdef CELERITAS_USE_MPI
-              << "on " << comm_.size() << " process"
-              << (comm_.size() > 1 ? "es" : "")
+                  << "on " << comm_.size() << " process"
+                  << (comm_.size() > 1 ? "es" : "")
 #else
-              << "in serial"
+                  << "in serial"
 #endif
-              << std::endl;
+                  << color_code(' ') << std::endl;
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -56,6 +60,7 @@ void ParallelHandler::OnTestStart(const ::testing::TestInfo&)
  */
 void ParallelHandler::OnTestEnd(const ::testing::TestInfo&)
 {
+    std::cout << std::flush;
     comm_.barrier();
 }
 

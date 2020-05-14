@@ -70,9 +70,9 @@ int test_main(int argc, char** argv)
     // Print final results
     if (comm.rank() == 0)
     {
-        std::cout << "Unit tests for " << (argc > 0 ? argv[0] : "UNKNOWN")
-                  << ": " << (global_failed ? "FAILED" : "PASSED")
-                  << std::endl;
+        std::cout << color_code('x') << (argc > 0 ? argv[0] : "UNKNOWN")
+                  << ": tests " << (global_failed ? "FAILED" : "PASSED")
+                  << color_code(' ') << std::endl;
     }
 
     // Return 1 if any failure, 0 if all success
