@@ -41,19 +41,6 @@
 #define CELER_CONSTEXPR_FUNCTION constexpr CELER_FORCEINLINE_FUNCTION
 
 /*!
- * \def CELER_IS_TRIVIALLY_COPYABLE(type)
- *
- * Whether a given type is trivially copyable.
- */
-#if !defined(__CUDACC__) || __CUDACC_VER_MAJOR__ >= 10
-#    include <type_traits>
-#    define CELER_IS_TRIVIALLY_COPYABLE(T) std::is_trivially_copyable<T>::value
-#else
-// Older CUDA versions
-#    define CELER_IS_TRIVIALLY_COPYABLE(T) __has_trivial_copy(T)
-#endif
-
-/*!
  * \def CELER_UNLIKELY(condition)
  *
  * Mark the result of this condition to be "unlikely".
