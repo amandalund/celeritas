@@ -13,6 +13,8 @@
 
 namespace celeritas
 {
+namespace detail
+{
 //---------------------------------------------------------------------------//
 /*!
  * \brief Construct with MPI rank
@@ -49,4 +51,5 @@ void NonMasterResultPrinter::OnTestPartResult(
 }
 
 //---------------------------------------------------------------------------//
+} // namespace detail
 } // namespace celeritas

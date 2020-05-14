@@ -10,6 +10,8 @@
 
 namespace celeritas
 {
+namespace detail
+{
 //---------------------------------------------------------------------------//
 // Get an ANSI color code: [y]ellow / [r]ed / [ ]clear
 const char* color_code(char abbrev);
@@ -19,6 +21,7 @@ const char* color_code(char abbrev);
 const char* skip_cstring();
 
 //---------------------------------------------------------------------------//
+} // namespace detail
 } // namespace celeritas
 
 #endif // test_detail_Utils_hh

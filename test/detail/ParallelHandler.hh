@@ -13,6 +13,8 @@
 namespace celeritas
 {
 class Communicator;
+namespace detail
+{
 //---------------------------------------------------------------------------//
 /*!
  * Integrate google test with MPI.
@@ -34,6 +36,7 @@ class ParallelHandler : public ::testing::EmptyTestEventListener
 };
 
 //---------------------------------------------------------------------------//
+} // namespace detail
 } // namespace celeritas
 
 #endif // test_detail_ParallelHandler_hh

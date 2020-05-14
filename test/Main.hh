@@ -19,7 +19,7 @@ using std::endl;
 //! Define main
 int main(int argc, char** argv)
 {
-    return celeritas::test_main(argc, argv);
+    return celeritas::detail::test_main(argc, argv);
 }
 
 #endif // test_Main_hh

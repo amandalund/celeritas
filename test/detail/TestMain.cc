@@ -16,6 +16,8 @@
 
 namespace celeritas
 {
+namespace detail
+{
 //---------------------------------------------------------------------------//
 int test_main(int argc, char** argv)
 {
@@ -78,4 +80,5 @@ int test_main(int argc, char** argv)
 }
 
 //---------------------------------------------------------------------------//
+} // namespace detail
 } // namespace celeritas

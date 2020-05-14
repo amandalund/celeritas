@@ -21,6 +21,8 @@ bool use_color()
 
 namespace celeritas
 {
+namespace detail
+{
 //---------------------------------------------------------------------------//
 /*!
  * Get an ANSI color code for [y]ellow / [r]ed / [d]efault.
@@ -58,4 +60,5 @@ const char* skip_cstring()
 }
 
 //---------------------------------------------------------------------------//
+} // namespace detail
 } // namespace celeritas

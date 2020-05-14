@@ -11,6 +11,8 @@
 
 namespace celeritas
 {
+namespace detail
+{
 //---------------------------------------------------------------------------//
 /*!
  * Construct with MPI communicator
@@ -58,4 +60,5 @@ void ParallelHandler::OnTestEnd(const ::testing::TestInfo&)
 }
 
 //---------------------------------------------------------------------------//
+} // namespace detail
 } // namespace celeritas

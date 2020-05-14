@@ -12,6 +12,8 @@
 
 namespace celeritas
 {
+namespace detail
+{
 //---------------------------------------------------------------------------//
 /*!
  * Print test results on non-rank-zero processes.
@@ -30,6 +32,7 @@ class NonMasterResultPrinter : public ::testing::EmptyTestEventListener
 };
 
 //---------------------------------------------------------------------------//
+} // namespace detail
 } // namespace celeritas
 
 #endif // test_detail_NonMasterResultPrinter_hh
