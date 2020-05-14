@@ -85,11 +85,28 @@ namespace celeritas {{
 TEST_FILE = '''\
 #include "{name}.{hext}"
 
-namespace celeritas {{
-//---------------------------------------------------------------------------//
+#include "gtest/Main.hh"
+#include "gtest/Test.hh"
+
+using celeritas::{name};
 
 //---------------------------------------------------------------------------//
-}}  // namespace celeritas
+// TEST HARNESS
+//---------------------------------------------------------------------------//
+
+class {name}Test : public celeritas::Test
+{{
+  protected:
+    void SetUp() override {{}}
+}};
+
+//---------------------------------------------------------------------------//
+// TESTS
+//---------------------------------------------------------------------------//
+
+TEST_F({name}Test, all)
+{{
+}}
 '''
 
 CMAKE_TOP = '''\
@@ -145,6 +162,8 @@ TEMPLATES = {
     'cc': CODE_FILE,
     'cu': CODE_FILE,
     'cuh': HEADER_FILE,
+    'test.cc': TEST_FILE,
+    'test.cu': TEST_FILE,
     'k.cuh': INLINE_FILE,
     'i.cuh': INLINE_FILE,
     't.cuh': INLINE_FILE,
