@@ -3,12 +3,12 @@
 // See the top-level COPYRIGHT file for details.
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
-//! \file testCommunicator.cc
+//! \file Communicator.test.cc
 //---------------------------------------------------------------------------//
 #include "comm/Communicator.hh"
 
-#include "../Main.hh"
-#include "../Test.hh"
+#include "gtest/Main.hh"
+#include "gtest/Test.hh"
 
 using celeritas::Communicator;
 
@@ -19,7 +19,7 @@ using celeritas::Communicator;
 class CommunicatorTest : public celeritas::Test
 {
   protected:
-    void SetUp() { cout << "Hello!" << endl; }
+    void SetUp() override {}
 };
 
 //---------------------------------------------------------------------------//
@@ -31,7 +31,9 @@ TEST_F(CommunicatorTest, rank)
     Communicator comm;
 
     EXPECT_EQ(MPI_COMM_WORLD, comm.mpi_comm());
+
 #ifdef CELERITAS_USE_MPI
+    // Test MPI-specific functionality
     int expected_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &expected_rank);
     EXPECT_EQ(expected_rank, comm.rank());

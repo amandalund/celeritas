@@ -7,11 +7,11 @@
 #-----------------------------------------------------------------------------#
 
 add_library(test_celeritas
-  Test.cc
-  detail/NonMasterResultPrinter.cc
-  detail/ParallelHandler.cc
-  detail/TestMain.cc
-  detail/Utils.cc
+  gtest/Test.cc
+  gtest/detail/NonMasterResultPrinter.cc
+  gtest/detail/ParallelHandler.cc
+  gtest/detail/TestMain.cc
+  gtest/detail/Utils.cc
 )
 target_link_libraries(test_celeritas PUBLIC celeritas GTest::GTest)
 target_include_directories(test_celeritas
