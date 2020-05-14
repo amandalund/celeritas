@@ -12,7 +12,6 @@ include(GNUInstallDirs)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(CeleritasUtils)
 
-
 #---------------------------------------------------------------------------##
 # OPTIONS
 #---------------------------------------------------------------------------##
@@ -92,6 +91,9 @@ add_subdirectory(src)
 #---------------------------------------------------------------------------##
 
 if(CELERITAS_BUILD_TESTS)
+  if(BUILD_TESTING)
+    include(CTest)
+  endif()
   add_subdirectory(test)
 endif()
 

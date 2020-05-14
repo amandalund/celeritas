@@ -10,6 +10,12 @@
 
 #include "detail/TestMain.hh"
 
+#include <string>
+#include <vector>
+
+using std::cout;
+using std::endl;
+
 //! Define main
 int main(int argc, char** argv)
 {
