@@ -8,8 +8,8 @@ cmake_minimum_required(VERSION 3.10)
 project(Celeritas VERSION 0.0.1 LANGUAGES CXX)
 cmake_policy(VERSION 3.10...3.16)
 
-include(GNUInstallDirs)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+include(GNUInstallDirs)
 include(CeleritasUtils)
 
 #---------------------------------------------------------------------------##
@@ -18,7 +18,6 @@ include(CeleritasUtils)
 
 # Tests
 option(CELERITAS_BUILD_TESTS "Build Celeritas unit tests" ON)
-option(BUILD_TESTING "Enable CTest" ${CELERITAS_BUILD_TESTS})
 
 # TPLs
 option(CELERITAS_USE_CUDA "Enable GPU transport" ON)
@@ -91,9 +90,7 @@ add_subdirectory(src)
 #---------------------------------------------------------------------------##
 
 if(CELERITAS_BUILD_TESTS)
-  if(BUILD_TESTING)
-    include(CTest)
-  endif()
+  include(CTest)
   add_subdirectory(test)
 endif()
 
