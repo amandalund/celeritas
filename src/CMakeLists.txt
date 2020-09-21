@@ -34,6 +34,7 @@ list(APPEND SOURCES
   physics/base/SecondaryAllocatorStore.cc
   physics/material/MaterialParams.cc
   physics/material/detail/Utils.cc
+  sim/TrackInitializerStore.cc
 )
 
 if(CELERITAS_USE_CUDA)
@@ -43,6 +44,7 @@ if(CELERITAS_USE_CUDA)
     base/Memory.cu
     random/cuda/RngStateInit.cu
     random/cuda/RngStateStore.cc
+    sim/InitializeTracks.cu
   )
   list(APPEND PRIVATE_DEPS CUDA::cudart)
 else()
