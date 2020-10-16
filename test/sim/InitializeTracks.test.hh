@@ -28,7 +28,8 @@ struct Interactor
 {
     CELER_FUNCTION Interactor(const ParticleTrackView& particle,
                               SecondaryAllocatorView&  allocate_secondaries)
-        : energy(particle.energy()), allocate_secondaries(allocate_secondaries)
+        : inc_energy(particle.energy())
+        , allocate_secondaries(allocate_secondaries)
     {
     }
 
@@ -44,7 +45,7 @@ struct Interactor
         Interaction result;
 
         // Kill some tracks to create vacancies in the track vector
-        if (static_cast<int>(energy.value()) % 3)
+        if (static_cast<int>(inc_energy.value()) % 3)
         {
             result.action = Action::scattered;
         }
@@ -58,14 +59,21 @@ struct Interactor
         result.secondaries = {allocated, alloc_size};
         for (unsigned long int i = 0; i < alloc_size; ++i)
         {
-            result.secondaries[i].def_id = ParticleDefId(0);
-            result.secondaries[i].energy
-                = units::MevEnergy{i * energy.value() / 100};
+            units::MevEnergy energy{i * inc_energy.value() / 100};
+            if (energy.value() > 0)
+            {
+                result.secondaries[i].def_id = ParticleDefId(0);
+                result.secondaries[i].energy = energy;
+            }
+            else
+            {
+                result.secondaries[i] = Secondary::from_cutoff();
+            }
         }
         return result;
     }
 
-    units::MevEnergy        energy;
+    units::MevEnergy        inc_energy;
     SecondaryAllocatorView& allocate_secondaries;
 };
 

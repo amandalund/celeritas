@@ -25,10 +25,10 @@ struct Secondary
     units::MevEnergy energy;    //!< New kinetic energy
     Real3            direction; //!< New direction
 
-    // Secondary failed to sample
-    static inline CELER_FUNCTION Secondary from_failure();
+    // Secondary did not survive cutoffs and has been processed
+    static inline CELER_FUNCTION Secondary from_cutoff();
 
-    // Whether the secondary was successfully sampled
+    // Whether the secondary survived cutoffs
     explicit inline CELER_FUNCTION operator bool() const;
 };
 
@@ -36,12 +36,10 @@ struct Secondary
 // INLINE FUNCTIONS
 //---------------------------------------------------------------------------//
 /*!
- * Construct a secondary that failed to sample correctly.
- *
- * TODO: we should probably rename this and reuse for secondaries that should
- * deposit energy locally by being below a cutoff.
+ * Construct a secondary that has been killed after having cutoffs applied and
+ * energy deposited locally
  */
-CELER_FUNCTION Secondary Secondary::from_failure()
+CELER_FUNCTION Secondary Secondary::from_cutoff()
 {
     Secondary result;
     result.def_id = {};

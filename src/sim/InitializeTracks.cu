@@ -97,7 +97,7 @@ __global__ void count_secondaries_kernel(size_type* secondary_count,
         // Count how many secondaries survived cutoffs for each track
         for (const auto& secondary : result.secondaries)
         {
-            if (secondary.energy.value() > 0)
+            if (secondary)
             {
                 ++secondary_count[thread_id];
             }
@@ -144,7 +144,7 @@ create_from_secondaries_kernel(size_type*              cum_secondaries,
         for (const auto& secondary : result.secondaries)
         {
             // If the secondary survived cutoffs
-            if (secondary.energy.value() > 0)
+            if (secondary)
             {
                 TrackInitializer& init = initializers[index++];
 
