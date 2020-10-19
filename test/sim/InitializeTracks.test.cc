@@ -115,18 +115,16 @@ TEST_F(TrackInitTest, run)
              secondaries.device_pointers(),
              interactions.device_pointers());
 
-    // Launch kernel to find the indices of the empty slots in track vector
-    find_vacancies(vacancies, interactions.device_pointers());
+    // Launch kernel to find the indices of the empty slots in track vector and
+    // count the number of secondaries produced in each interaction
+    process_interactions(secondary_count.device_pointers(),
+                         vacancies,
+                         interactions.device_pointers());
 
     // Check the vacancies
     output_vacancies   = vacancies_test(vacancies);
     expected_vacancies = {1, 4, 7};
     EXPECT_VEC_EQ(expected_vacancies, output_vacancies);
-
-    // Launch kernel to count the number of secondaries produced in each
-    // interaction
-    count_secondaries(secondary_count.device_pointers(),
-                      interactions.device_pointers());
 
     // Launch a kernel to create track initializers from
     // interactions/secondaries

@@ -51,13 +51,11 @@ void initialize_tracks(VacancyStore&          vacancies,
                        const GeoStatePointers       gstates);
 
 //---------------------------------------------------------------------------//
-// Find empty slots in the vector of track states
-void find_vacancies(VacancyStore&           vacancies,
-                    span<const Interaction> interactions);
-//---------------------------------------------------------------------------//
-// Count the number of secondaries that survived cutoffs for each interaction.
-void count_secondaries(span<size_type>         secondary_count,
-                       span<const Interaction> interactions);
+// Find empty slots in the vector of track states and count the number of
+// secondaries that survived cutoffs for each interaction.
+void process_interactions(span<size_type>         secondary_count,
+                          VacancyStore&           vacancies,
+                          span<const Interaction> interactions);
 
 //---------------------------------------------------------------------------//
 // Create track initializers on device from primary particles

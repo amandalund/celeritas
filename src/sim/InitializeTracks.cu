@@ -57,10 +57,13 @@ initialize_tracks_kernel(const span<const size_type>  vacancies,
 
 //---------------------------------------------------------------------------//
 /*!
- * Find empty slots in the track vector.
+ * Find empty slots in the track vector and count the number of secondaries
+ * that survived cutoffs for each interaction.
  */
-__global__ void find_vacancies_kernel(span<size_type>         vacancies,
-                                      span<const Interaction> interactions)
+__global__ void
+process_interactions_kernel(size_type*              secondary_count,
+                            span<size_type>         vacancies,
+                            span<const Interaction> interactions)
 {
     auto thread_id = KernelParamCalculator::thread_id().get();
     if (thread_id < interactions.size())
@@ -78,23 +81,9 @@ __global__ void find_vacancies_kernel(span<size_type>         vacancies,
             // Flag as a track that's still alive
             vacancies[thread_id] = occupied_flag();
         }
-    }
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * Count the number of secondaries that survived cutoffs for each interaction.
- */
-__global__ void count_secondaries_kernel(size_type* secondary_count,
-                                         span<const Interaction> interactions)
-{
-    auto thread_id = KernelParamCalculator::thread_id().get();
-    if (thread_id < interactions.size())
-    {
-        secondary_count[thread_id] = 0;
-        const Interaction& result = interactions[thread_id];
 
         // Count how many secondaries survived cutoffs for each track
+        secondary_count[thread_id] = 0;
         for (const auto& secondary : result.secondaries)
         {
             if (secondary)
@@ -192,19 +181,23 @@ void initialize_tracks(VacancyStore&          vacancies,
 
 //---------------------------------------------------------------------------//
 /*!
- * Find empty slots in the vector of tracks
+ * Find empty slots in the vector of tracks and count the number of secondaries
+ * that survived cutoffs for each interaction.
  */
-void find_vacancies(VacancyStore&           vacancies,
-                    span<const Interaction> interactions)
+void process_interactions(span<size_type>         secondary_count,
+                          VacancyStore&           vacancies,
+                          span<const Interaction> interactions)
 {
+    REQUIRE(interactions.size() == secondary_count.size());
+
     // Resize the vector of vacancies to be equal to the number of tracks
     size_type num_tracks = interactions.size();
     vacancies.resize(num_tracks);
 
     KernelParamCalculator calc_launch_params;
     auto                  params = calc_launch_params(num_tracks);
-    find_vacancies_kernel<<<params.grid_size, params.block_size>>>(
-        vacancies.device_pointers(), interactions);
+    process_interactions_kernel<<<params.grid_size, params.block_size>>>(
+        secondary_count.data(), vacancies.device_pointers(), interactions);
 
     CELER_CUDA_CALL(cudaDeviceSynchronize());
 
@@ -220,23 +213,6 @@ void find_vacancies(VacancyStore&           vacancies,
     // Resize the vector of vacancies to be equal to the number of empty slots
     vacancies.resize(thrust::raw_pointer_cast(end)
                      - vacancies.device_pointers().data());
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * Count the number of secondaries that survived cutoffs for each interaction.
- */
-void count_secondaries(span<size_type>         secondary_count,
-                       span<const Interaction> interactions)
-{
-    REQUIRE(interactions.size() == secondary_count.size());
-
-    KernelParamCalculator calc_launch_params;
-    auto                  params = calc_launch_params(interactions.size());
-    count_secondaries_kernel<<<params.grid_size, params.block_size>>>(
-        secondary_count.data(), interactions);
-
-    CELER_CUDA_CALL(cudaDeviceSynchronize());
 }
 
 //---------------------------------------------------------------------------//
