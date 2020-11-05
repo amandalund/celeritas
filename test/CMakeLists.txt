@@ -107,6 +107,8 @@ celeritas_add_test(comm/Communicator.test.cc)
 #-----------------------------------------------------------------------------#
 # Geometry
 
+# XXX
+if(CELERITAS_BUILD_VECGEOM_TEST)
 if(CELERITAS_USE_VecGeom)
   celeritas_setup_tests(SERIAL PREFIX geometry
     LINK_LIBRARIES VecGeom::vecgeom)
@@ -137,6 +139,7 @@ if(CELERITAS_USE_VecGeom)
     target_link_libraries(geometry_GeoTrackView celeritas_vgtest)
     target_link_libraries(geometry_LinearPropagator celeritas_vgtest)
   endif()
+endif()
 endif()
 
 #-----------------------------------------------------------------------------#

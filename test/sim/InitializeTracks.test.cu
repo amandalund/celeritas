@@ -20,65 +20,58 @@ using namespace celeritas;
 // KERNELS
 //---------------------------------------------------------------------------//
 
-__global__ void
-initialize_vacancies_kernel(size_type num_tracks, span<size_type> vacancies)
-{
-    auto thread_id = celeritas::KernelParamCalculator::thread_id().get();
-    if (thread_id < num_tracks)
-    {
-        vacancies.data()[thread_id] = thread_id;
-    }
-}
-
-__global__ void interact_kernel(size_type                  num_tracks,
-                                ParticleParamsPointers     pparams,
-                                ParticleStatePointers      pstates,
-                                SecondaryAllocatorPointers secondaries,
-                                Interaction*               interactions)
+__global__ void interact_kernel(StatePointers              states,
+                                ParamPointers              params,
+                                SecondaryAllocatorPointers secondaries)
 {
     auto thread_id = celeritas::KernelParamCalculator::thread_id();
-    if (thread_id.get() < num_tracks)
+    if (thread_id.get() < states.size())
     {
-        ParticleTrackView      particle(pparams, pstates, thread_id);
+        ParticleTrackView particle(params.particle, states.particle, thread_id);
+        SimTrackView      sim(states.sim, thread_id);
         SecondaryAllocatorView allocate_secondaries(secondaries);
 
         // Allow the particle to interact and create secondaries
         Interactor interact(particle, allocate_secondaries);
-        interactions[thread_id.get()] = interact();
+        states.interactions[thread_id.get()] = interact();
+
+        // Mark the track as dead if the particle was killed
+        if (action_killed(states.interactions[thread_id.get()].action))
+        {
+            sim.alive() = false;
+        }
     }
 }
 
-__global__ void tracks_test_kernel(size_type              num_tracks,
-                                   ParticleParamsPointers pparams,
-                                   ParticleStatePointers  pstates,
-                                   double*                output)
+__global__ void
+tracks_test_kernel(StatePointers states, ParamPointers params, double* output)
 {
     auto thread_id = celeritas::KernelParamCalculator::thread_id();
-    if (thread_id.get() < num_tracks)
+    if (thread_id.get() < states.size())
     {
-        ParticleTrackView particle(pparams, pstates, thread_id);
+        ParticleTrackView particle(params.particle, states.particle, thread_id);
         output[thread_id.get()] = particle.energy().value();
     }
 }
 
 __global__ void
-initializers_test_kernel(span<TrackInitializer> initializers, double* output)
+initializers_test_kernel(TrackInitializerPointers initializers, double* output)
 {
     auto thread_id = celeritas::KernelParamCalculator::thread_id().get();
-    if (thread_id < initializers.size())
+    if (thread_id < initializers.tracks.size())
     {
-        TrackInitializer& init = initializers.data()[thread_id];
+        TrackInitializer& init = initializers.tracks[thread_id];
         output[thread_id]      = init.particle.energy.value();
     }
 }
 
 __global__ void
-vacancies_test_kernel(span<size_type> vacancies, size_type* output)
+vacancies_test_kernel(TrackInitializerPointers initializers, size_type* output)
 {
     auto thread_id = celeritas::KernelParamCalculator::thread_id().get();
-    if (thread_id < vacancies.size())
+    if (thread_id < initializers.vacancies.size())
     {
-        output[thread_id] = vacancies.data()[thread_id];
+        output[thread_id] = initializers.vacancies[thread_id];
     }
 }
 
@@ -86,89 +79,73 @@ vacancies_test_kernel(span<size_type> vacancies, size_type* output)
 // TESTING INTERFACE
 //---------------------------------------------------------------------------//
 
-void initialize_vacancies(size_type num_tracks, VacancyStore& vacancies)
+void interact(StatePointers              states,
+              ParamPointers              params,
+              SecondaryAllocatorPointers secondaries)
 {
-    vacancies.resize(num_tracks);
     KernelParamCalculator calc_launch_params;
-    auto                  params = calc_launch_params(num_tracks);
-    initialize_vacancies_kernel<<<params.grid_size, params.block_size>>>(
-        num_tracks, vacancies.device_pointers());
+    auto                  lparams = calc_launch_params(states.size());
+    interact_kernel<<<lparams.grid_size, lparams.block_size>>>(
+        states, params, secondaries);
 
     CELER_CUDA_CHECK_ERROR();
 }
 
-void interact(size_type                  num_tracks,
-              ParticleParamsPointers     pparams,
-              ParticleStatePointers      pstates,
-              SecondaryAllocatorPointers secondaries,
-              span<Interaction>          interactions)
-{
-    KernelParamCalculator calc_launch_params;
-    auto                  params = calc_launch_params(num_tracks);
-    interact_kernel<<<params.grid_size, params.block_size>>>(
-        num_tracks, pparams, pstates, secondaries, interactions.data());
-
-    CELER_CUDA_CHECK_ERROR();
-}
-
-std::vector<double> tracks_test(size_type              num_tracks,
-                                ParticleParamsPointers pparams,
-                                ParticleStatePointers  pstates)
+std::vector<double> tracks_test(StatePointers states, ParamPointers params)
 {
     // Allocate memory for results
-    thrust::device_vector<double> output(num_tracks);
+    thrust::device_vector<double> output(states.size());
 
     // Launch a kernel to check the properties of the initialized tracks
     KernelParamCalculator calc_launch_params;
-    auto                  params = calc_launch_params(num_tracks);
-    tracks_test_kernel<<<params.grid_size, params.block_size>>>(
-        num_tracks, pparams, pstates, thrust::raw_pointer_cast(output.data()));
+    auto                  lparams = calc_launch_params(states.size());
+    tracks_test_kernel<<<lparams.grid_size, lparams.block_size>>>(
+        states, params, thrust::raw_pointer_cast(output.data()));
 
     CELER_CUDA_CHECK_ERROR();
 
     // Copy data back to host
-    std::vector<double> host_output(num_tracks);
+    std::vector<double> host_output(states.size());
     thrust::copy(output.begin(), output.end(), host_output.begin());
 
     return host_output;
 }
 
-std::vector<double> initializers_test(TrackInitializerStore& initializers)
+std::vector<double> initializers_test(TrackInitializerPointers initializers)
 {
     // Allocate memory for results
-    thrust::device_vector<double> output(initializers.size());
+    thrust::device_vector<double> output(initializers.tracks.size());
 
     // Launch a kernel to check the properties of the track initializers
     KernelParamCalculator calc_launch_params;
-    auto                  params = calc_launch_params(initializers.size());
-    initializers_test_kernel<<<params.grid_size, params.block_size>>>(
-        initializers.device_pointers(),
-        thrust::raw_pointer_cast(output.data()));
+    auto lparams = calc_launch_params(initializers.tracks.size());
+    initializers_test_kernel<<<lparams.grid_size, lparams.block_size>>>(
+        initializers, thrust::raw_pointer_cast(output.data()));
 
     CELER_CUDA_CHECK_ERROR();
 
     // Copy data back to host
-    std::vector<double> host_output(initializers.size());
+    std::vector<double> host_output(initializers.tracks.size());
     thrust::copy(output.begin(), output.end(), host_output.begin());
 
     return host_output;
 }
 
-std::vector<size_type> vacancies_test(VacancyStore& vacancies)
+std::vector<size_type> vacancies_test(TrackInitializerPointers initializers)
 {
     // Allocate memory for results
-    thrust::device_vector<size_type> output(vacancies.size());
+    thrust::device_vector<size_type> output(initializers.vacancies.size());
 
     // Launch a kernel to check the indices of the empty slots
     KernelParamCalculator calc_launch_params;
-    auto                  params = calc_launch_params(vacancies.size());
-    vacancies_test_kernel<<<params.grid_size, params.block_size>>>(
-        vacancies.device_pointers(), thrust::raw_pointer_cast(output.data()));
+    auto lparams = calc_launch_params(initializers.vacancies.size());
+    vacancies_test_kernel<<<lparams.grid_size, lparams.block_size>>>(
+        initializers, thrust::raw_pointer_cast(output.data()));
 
     CELER_CUDA_CHECK_ERROR();
 
     // Copy data back to host
-    std::vector<size_type> host_output(vacancies.size());
+    std::vector<size_type> host_output(initializers.vacancies.size());
     thrust::copy(output.begin(), output.end(), host_output.begin());
 
     return host_output;

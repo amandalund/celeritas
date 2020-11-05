@@ -3,45 +3,36 @@
 // See the top-level COPYRIGHT file for details.
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
-//! \file VacancyStore.hh
+//! \file SimStateStore.hh
 //---------------------------------------------------------------------------//
 #pragma once
 
 #include "base/DeviceVector.hh"
+#include "base/Types.hh"
+#include "SimStatePointers.hh"
 
 namespace celeritas
 {
 //---------------------------------------------------------------------------//
 /*!
- * Manage device data for vacancies.
+ * Manage on-device simulation states.
  */
-class VacancyStore
+class SimStateStore
 {
   public:
-    //@{
-    //! Type aliases
-    using Span = span<size_type>;
-    //@}
+    // Construct from number of track states
+    explicit SimStateStore(size_type size);
 
-  public:
-    // Construct with the maximum number of indices to store on device
-    explicit VacancyStore(size_type capacity);
+    /// ACCESSORS ///
 
-    // Get the number of elements
-    size_type capacity() const { return allocation_.size(); }
+    // Number of states
+    size_type size() const;
 
-    // Get the number of elements
-    size_type size() const { return size_; }
-
-    // Change the size (without changing capacity)
-    void resize(size_type size);
-
-    // Get a view to the managed data
-    Span device_pointers();
+    // View on-device states
+    SimStatePointers device_pointers();
 
   private:
-    DeviceVector<size_type> allocation_;
-    size_type               size_;
+    DeviceVector<SimTrackState> vars_;
 };
 
 //---------------------------------------------------------------------------//

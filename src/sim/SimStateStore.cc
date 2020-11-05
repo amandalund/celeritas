@@ -1,43 +1,47 @@
-//----------------------------------*-C++-*----------------------------------//
+//---------------------------------*-C++-*-----------------------------------//
 // Copyright 2020 UT-Battelle, LLC, and other Celeritas developers.
 // See the top-level COPYRIGHT file for details.
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
-//! \file VacancyStore.cc
+//! \file SimStateStore.cc
 //---------------------------------------------------------------------------//
-#include "VacancyStore.hh"
+#include "SimStateStore.hh"
 
-#include "base/Assert.hh"
+#include "base/Array.hh"
+#include "SimStatePointers.hh"
 
 namespace celeritas
 {
 //---------------------------------------------------------------------------//
 /*!
- * Construct with the maximum number of elements to allocate on device.
+ * Construct with number of parallel tracks.
  */
-VacancyStore::VacancyStore(size_type capacity)
-    : allocation_(capacity), size_(0)
+SimStateStore::SimStateStore(size_type size) : vars_(size)
 {
-    REQUIRE(capacity > 0);
+    REQUIRE(size > 0);
+    ENSURE(!vars_.empty());
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * Change the size (without changing capacity)
+ * Number of threads stored in the state.
  */
-void VacancyStore::resize(size_type size)
+size_type SimStateStore::size() const
 {
-    REQUIRE(size <= this->capacity());
-    size_ = size;
+    return vars_.size();
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * Get a view to the managed data.
+ * View to on-device state data.
  */
-auto VacancyStore::device_pointers() -> Span
+SimStatePointers SimStateStore::device_pointers()
 {
-    return {allocation_.device_pointers().data(), this->size()};
+    SimStatePointers result;
+    result.vars = vars_.device_pointers();
+
+    ENSURE(result);
+    return result;
 }
 
 //---------------------------------------------------------------------------//

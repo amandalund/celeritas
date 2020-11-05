@@ -8,13 +8,10 @@
 #include "physics/base/Interaction.hh"
 #include "physics/base/SecondaryAllocatorPointers.hh"
 #include "physics/base/SecondaryAllocatorView.hh"
-#include "physics/base/ParticleParams.hh"
 #include "physics/base/ParticleStateStore.hh"
 #include "physics/base/ParticleTrackView.hh"
-#include "geometry/GeoParamsPointers.hh"
-#include "geometry/GeoStatePointers.hh"
 #include "sim/TrackInitializerStore.hh"
-#include "sim/VacancyStore.hh"
+#include <vector>
 
 namespace celeritas_test
 {
@@ -78,32 +75,23 @@ struct Interactor
 };
 
 //---------------------------------------------------------------------------//
-//! Launch a kernel to set the indices of the empty slots in the vector of
-//! track states. At the start of the simulation they are all empty.
-void initialize_vacancies(size_type num_tracks, VacancyStore& vacancies);
-
-//---------------------------------------------------------------------------//
 //! Launch a kernel to process interactions
-void interact(size_type                  num_tracks,
-              ParticleParamsPointers     pparams,
-              ParticleStatePointers      pstates,
-              SecondaryAllocatorPointers secondaries,
-              span<Interaction>          interactions);
+void interact(StatePointers              states,
+              ParamPointers              params,
+              SecondaryAllocatorPointers secondaries);
 
 //---------------------------------------------------------------------------//
 //! Launch a kernel to get the energies of the initialized tracks
-std::vector<double> tracks_test(size_type              num_tracks,
-                                ParticleParamsPointers pparams,
-                                ParticleStatePointers  pstates);
+std::vector<double> tracks_test(StatePointers states, ParamPointers params);
 
 //---------------------------------------------------------------------------//
 //! Launch a kernel to get the energies of the track initializers created from
 //! primaries or secondaries
-std::vector<double> initializers_test(TrackInitializerStore& initializers);
+std::vector<double> initializers_test(TrackInitializerPointers initializers);
 
 //---------------------------------------------------------------------------//
 //! Launch a kernel to get the indices of the vacant slots in the track vector
-std::vector<size_type> vacancies_test(VacancyStore& vacancies);
+std::vector<size_type> vacancies_test(TrackInitializerPointers initializers);
 
 //---------------------------------------------------------------------------//
 } // namespace celeritas_test

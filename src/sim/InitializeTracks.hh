@@ -7,35 +7,30 @@
 //---------------------------------------------------------------------------//
 #pragma once
 
-#include "TrackInitializer.hh"
 #include "TrackInitializerStore.hh"
-#include "VacancyStore.hh"
 #include "base/KernelParamCalculator.cuda.hh"
 #include "base/Span.hh"
-#include "physics/base/Interaction.hh"
 #include "physics/base/Primary.hh"
-#include "physics/base/ParticleStatePointers.hh"
-#include "physics/base/ParticleParamsPointers.hh"
-#include "geometry/GeoStatePointers.hh"
-#include "geometry/GeoParamsPointers.hh"
+#include "ParamPointers.hh"
+#include "StatePointers.hh"
 
 namespace celeritas
 {
 //---------------------------------------------------------------------------//
 // Predicate used to check whether the track at a given index in the track
 // vector is alive
-struct is_not_vacant
+struct occupied
 {
     size_type flag;
 
-    is_not_vacant(size_type flag) : flag(flag){};
+    occupied(size_type flag) : flag(flag){};
 
     CELER_FUNCTION bool operator()(const size_type x) { return x == flag; }
 };
 
 //---------------------------------------------------------------------------//
-// Mark a track state as not vacant, i.e., not available to initialize a new
-// track in
+// Mark a track state as occupied, i.e., the particle in that slot is still
+// alive, so a new track can't be initialized there.
 CELER_CONSTEXPR_FUNCTION size_type occupied_flag()
 {
     return numeric_limits<size_type>::max();
@@ -43,30 +38,25 @@ CELER_CONSTEXPR_FUNCTION size_type occupied_flag()
 
 //---------------------------------------------------------------------------//
 // Initialize the track states on device.
-void initialize_tracks(VacancyStore&          vacancies,
-                       TrackInitializerStore& initializers,
-                       const ParticleParamsPointers pparams,
-                       const ParticleStatePointers  pstates,
-                       const GeoParamsPointers      gparams,
-                       const GeoStatePointers       gstates);
+void initialize_tracks(StatePointers          states,
+                       ParamPointers          params,
+                       TrackInitializerStore& initializers);
 
 //---------------------------------------------------------------------------//
 // Find empty slots in the vector of track states and count the number of
 // secondaries that survived cutoffs for each interaction.
-void process_interactions(span<size_type>         secondary_count,
-                          VacancyStore&           vacancies,
-                          span<const Interaction> interactions);
+void find_vacancies(StatePointers states, TrackInitializerStore& initializers);
 
 //---------------------------------------------------------------------------//
-// Create track initializers on device from primary particles
-void create_from_primaries(span<const Primary>    primaries,
-                           TrackInitializerStore& initializers);
+// Create track initializers on device from primary particle.s
+void process_primaries(span<const Primary>    primaries,
+                       TrackInitializerStore& initializers);
 
 //---------------------------------------------------------------------------//
-// Create track initializers on device from secondary particles
-void create_from_secondaries(span<size_type>         secondary_count,
-                             span<const Interaction> interactions,
-                             TrackInitializerStore&  initializers);
+// Create track initializers on device from secondary particles.
+void process_secondaries(StatePointers          states,
+                         ParamPointers          params,
+                         TrackInitializerStore& initializers);
 
 //---------------------------------------------------------------------------//
 } // namespace celeritas

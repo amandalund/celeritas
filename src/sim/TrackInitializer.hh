@@ -11,22 +11,12 @@
 #include "physics/base/Interaction.hh"
 #include "physics/base/Primary.hh"
 #include "physics/base/Secondary.hh"
-// XXX Consider moving initializer_t to a traits class for each "state" thing
 #include "physics/base/ParticleTrackView.hh"
 #include "geometry/GeoTrackView.hh"
+#include "SimTrackView.hh"
 
 namespace celeritas
 {
-// XXX temporary, move to simstate
-struct SimTrackView
-{
-    struct Initializer_t
-    {
-        EventId event_id;
-        TrackId track_id;
-    };
-};
-
 //---------------------------------------------------------------------------//
 /*!
  * Lightweight version of a track used to initialize new tracks from primaries
@@ -47,18 +37,9 @@ struct TrackInitializer
         geo.dir         = primary.direction;
         geo.pos         = primary.position;
         sim.event_id    = primary.event_id;
-        return *this;
-    }
-
-    // Initialize from a secondary particle
-    CELER_FUNCTION TrackInitializer& operator=(const Secondary& secondary)
-    {
-        particle.def_id = secondary.def_id;
-        particle.energy = secondary.energy;
-        geo.dir         = secondary.direction;
-        // TODO: Get the position and event id from somewhere
-        // geo.pos         = secondary.position;
-        // sim.event_id    = secondary.event_id;
+        sim.track_id    = primary.track_id;
+        sim.parent_id   = TrackId{0};
+        sim.alive       = true;
         return *this;
     }
 };

@@ -3,28 +3,30 @@
 // See the top-level COPYRIGHT file for details.
 // SPDX-License-Identifier: (Apache-2.0 OR MIT)
 //---------------------------------------------------------------------------//
-//! \file Primary.hh
+//! \file TrackInitializerPointers.hh
 //---------------------------------------------------------------------------//
 #pragma once
 
 #include "base/Types.hh"
-#include "ParticleDef.hh"
-#include "sim/Types.hh"
+#include "TrackInitializer.hh"
 
 namespace celeritas
 {
 //---------------------------------------------------------------------------//
 /*!
- * Starting "source" particle. One or more of these are emitted by an Event.
+ * View to the lightweight track data.
  */
-struct Primary
+struct TrackInitializerPointers
 {
-    ParticleDefId    def_id;
-    units::MevEnergy energy;
-    Real3            position;
-    Real3            direction;
-    EventId          event_id;
-    TrackId          track_id;
+    span<TrackInitializer> tracks;
+    span<size_type>        vacancies;
+    span<size_type>        secondary_counts;
+    size_type              track_count;
+
+    explicit CELER_FUNCTION operator bool() const
+    {
+        return !secondary_counts.empty();
+    }
 };
 
 //---------------------------------------------------------------------------//

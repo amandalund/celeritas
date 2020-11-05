@@ -22,7 +22,7 @@ include(CeleritasUtils)
 #---------------------------------------------------------------------------##
 
 # Components
-option(CELERITAS_BUILD_DEMOS "Build Celeritas demonstration mini-apps" ON)
+option(CELERITAS_BUILD_DEMOS "Build Celeritas demonstration mini-apps" OFF)
 option(CELERITAS_BUILD_TESTS "Build Celeritas unit tests" ON)
 
 # TPLs

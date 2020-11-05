@@ -11,6 +11,9 @@ set_cache_var(CELERITAS_USE_ROOT BOOL ON)
 set_cache_var(CELERITAS_USE_VecGeom BOOL ON)
 set_cache_var(CELERITAS_GIT_SUBMODULE BOOL OFF)
 
+# XXX
+set_cache_var(CELERITAS_BUILD_VECGEOM_TEST BOOL OFF)
+
 # Set rpath based on environment
 string(REPLACE ":" ";" _rpath "$ENV{LD_RUN_PATH}")
 set_cache_var(CMAKE_BUILD_RPATH STRING "${_rpath}")

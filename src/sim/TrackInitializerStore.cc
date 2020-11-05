@@ -8,6 +8,7 @@
 #include "TrackInitializerStore.hh"
 
 #include "base/Assert.hh"
+#include <numeric>
 
 namespace celeritas
 {
@@ -15,15 +16,27 @@ namespace celeritas
 /*!
  * Construct with the maximum number of elements to allocate on device.
  */
-TrackInitializerStore::TrackInitializerStore(size_type capacity)
-    : allocation_(capacity), size_(0)
+TrackInitializerStore::TrackInitializerStore(ParticleStateStore& states,
+                                             size_type           capacity)
+    : initializers_(capacity)
+    , size_(0)
+    , vacancies_(states.size())
+    , num_vacancies_(0)
+    , secondary_counts_(states.size())
+    , track_count_(0)
 {
     REQUIRE(capacity > 0);
+
+    // Initialize vacancies to mark all track slots as empty
+    std::vector<size_type> host_vacancies(vacancies_.size());
+    std::iota(host_vacancies.begin(), host_vacancies.end(), 0);
+    vacancies_.copy_to_device(make_span(host_vacancies));
+    num_vacancies_ = vacancies_.size();
 }
 
 //---------------------------------------------------------------------------//
 /*!
- * Change the size (without changing capacity)
+ * Change the size (without changing capacity).
  */
 void TrackInitializerStore::resize(size_type size)
 {
@@ -35,9 +48,17 @@ void TrackInitializerStore::resize(size_type size)
 /*!
  * Get a view to the managed data.
  */
-auto TrackInitializerStore::device_pointers() -> Span
+TrackInitializerPointers TrackInitializerStore::device_pointers()
 {
-    return {allocation_.device_pointers().data(), this->size()};
+    TrackInitializerPointers result;
+    result.tracks = {initializers_.device_pointers().data(), this->size()};
+    result.vacancies
+        = {vacancies_.device_pointers().data(), this->num_vacancies()};
+    result.secondary_counts = secondary_counts_.device_pointers();
+    result.track_count      = this->track_count();
+
+    ENSURE(result);
+    return result;
 }
 
 //---------------------------------------------------------------------------//
