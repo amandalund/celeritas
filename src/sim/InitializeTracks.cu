@@ -25,33 +25,32 @@ namespace celeritas
  * from either primary particles or secondaries. The new tracks are inserted
  * into empty slots (vacancies) in the track vector.
  */
-__global__ void
-initialize_tracks_kernel(const StatePointers            states,
-                         const ParamPointers            params,
-                         const TrackInitializerPointers initializers)
+__global__ void process_tracks_kernel(const StatePointers            states,
+                                      const ParamPointers            params,
+                                      const TrackInitializerPointers inits)
 {
     auto thread_id = KernelParamCalculator::thread_id().get();
-    if (thread_id < initializers.vacancies.size())
+    if (thread_id < inits.vacancies.size())
     {
         // Get the track initializer, starting from the back of the vector
-        const TrackInitializer& init
-            = initializers.tracks[initializers.tracks.size() - thread_id - 1];
+        const TrackInitializer& track
+            = inits.initializers[inits.initializers.size() - thread_id - 1];
 
         // Index of the empty slot to create the new track in
-        size_type empty_id = initializers.vacancies[thread_id];
+        size_type empty_id = inits.vacancies[thread_id];
 
         // Initialize particle physics data
         ParticleTrackView particle(
             params.particle, states.particle, ThreadId(empty_id));
-        particle = init.particle;
+        particle = track.particle;
 
         // Initialize geometry state
         // GeoTrackView geo(params.geo, states.geo, ThreadId(empty_id));
-        // geo = init.geo;
+        // geo = track.geo;
 
         // Initialize simulation state
         SimTrackView sim(states.sim, ThreadId(empty_id));
-        sim = init.sim;
+        sim = track.sim;
     }
 }
 
@@ -61,8 +60,8 @@ initialize_tracks_kernel(const StatePointers            states,
  * that survived cutoffs for each interaction.
  */
 __global__ void
-find_vacancies_kernel(const StatePointers            states,
-                      const TrackInitializerPointers initializers)
+process_post_interaction_kernel(const StatePointers            states,
+                                const TrackInitializerPointers inits)
 {
     auto thread_id = KernelParamCalculator::thread_id().get();
     if (thread_id < states.size())
@@ -72,21 +71,21 @@ find_vacancies_kernel(const StatePointers            states,
         SimTrackView sim(states.sim, ThreadId(thread_id));
         if (sim.alive())
         {
-            initializers.vacancies[thread_id] = occupied_flag();
+            inits.vacancies[thread_id] = occupied_flag();
         }
         else
         {
-            initializers.vacancies[thread_id] = thread_id;
+            inits.vacancies[thread_id] = thread_id;
         }
 
         // Count how many secondaries survived cutoffs for each track
-        initializers.secondary_counts[thread_id] = 0;
+        inits.secondary_counts[thread_id] = 0;
         const Interaction& result = states.interactions[thread_id];
         for (const auto& secondary : result.secondaries)
         {
             if (secondary)
             {
-                ++initializers.secondary_counts[thread_id];
+                ++inits.secondary_counts[thread_id];
             }
         }
     }
@@ -96,18 +95,17 @@ find_vacancies_kernel(const StatePointers            states,
 /*!
  * Create track initializers on device from primary particles.
  */
-__global__ void
-process_primaries_kernel(const span<const Primary>      primaries,
-                         const TrackInitializerPointers initializers)
+__global__ void process_primaries_kernel(const span<const Primary> primaries,
+                                         const TrackInitializerPointers inits)
 {
     auto thread_id = KernelParamCalculator::thread_id().get();
     if (thread_id < primaries.size())
     {
-        size_type         offset_id = initializers.tracks.size();
-        TrackInitializer& init = initializers.tracks[offset_id + thread_id];
+        size_type         offset_id = inits.initializers.size();
+        TrackInitializer& track = inits.initializers[offset_id + thread_id];
 
         // Construct a track initializer from a primary particle
-        init = primaries[thread_id];
+        track = primaries[thread_id];
     }
 }
 
@@ -115,10 +113,9 @@ process_primaries_kernel(const span<const Primary>      primaries,
 /*!
  * Create track initializers on device from secondary particles.
  */
-__global__ void
-process_secondaries_kernel(const StatePointers            states,
-                           const ParamPointers            params,
-                           const TrackInitializerPointers initializers)
+__global__ void process_secondaries_kernel(const StatePointers states,
+                                           const ParamPointers params,
+                                           const TrackInitializerPointers inits)
 {
     auto thread_id = KernelParamCalculator::thread_id().get();
     if (thread_id < states.size())
@@ -128,7 +125,7 @@ process_secondaries_kernel(const StatePointers            states,
         SimTrackView sim(states.sim, ThreadId(thread_id));
 
         // Starting index in the vector of track initializers
-        size_type index = initializers.secondary_counts[thread_id];
+        size_type index = inits.secondary_counts[thread_id];
 
         const Interaction& result = states.interactions[thread_id];
         for (const auto& secondary : result.secondaries)
@@ -137,16 +134,16 @@ process_secondaries_kernel(const StatePointers            states,
             if (secondary)
             {
                 // Construct a track initializer from a secondary
-                TrackInitializer& init = initializers.tracks[index];
-                init.particle.def_id   = secondary.def_id;
-                init.particle.energy   = secondary.energy;
-                init.geo.dir           = secondary.direction;
-                // init.geo.pos           = geo.pos();
-                unsigned int track_id = initializers.track_count + 1 + index++;
-                init.sim.track_id     = TrackId{track_id};
-                init.sim.parent_id    = sim.track_id();
-                init.sim.event_id     = sim.event_id();
-                init.sim.alive        = true;
+                TrackInitializer& track = inits.initializers[index];
+                track.particle.def_id   = secondary.def_id;
+                track.particle.energy   = secondary.energy;
+                track.geo.dir           = secondary.direction;
+                // track.geo.pos           = geo.pos();
+                unsigned int track_id = inits.track_count + 1 + index++;
+                track.sim.track_id    = TrackId{track_id};
+                track.sim.parent_id   = sim.track_id();
+                track.sim.event_id    = sim.event_id();
+                track.sim.alive       = true;
             }
         }
     }
@@ -158,27 +155,17 @@ process_secondaries_kernel(const StatePointers            states,
 /*!
  * Initialize the track states on device.
  */
-void initialize_tracks(StatePointers          states,
-                       ParamPointers          params,
-                       TrackInitializerStore& initializers)
+void process_tracks(StatePointers            states,
+                    ParamPointers            params,
+                    TrackInitializerPointers inits)
 {
-    // The number of new tracks to initialize is the smaller of the number of
-    // empty slots in the track vector and the number of track initializers
-    size_type num_new_tracks
-        = std::min(initializers.num_vacancies(), initializers.size());
-    initializers.num_vacancies() = num_new_tracks;
-
     // Initialize tracks on device
     KernelParamCalculator calc_launch_params;
-    auto                  lparams = calc_launch_params(num_new_tracks);
-    initialize_tracks_kernel<<<lparams.grid_size, lparams.block_size>>>(
-        states, params, initializers.device_pointers());
+    auto                  lparams = calc_launch_params(inits.vacancies.size());
+    process_tracks_kernel<<<lparams.grid_size, lparams.block_size>>>(
+        states, params, inits);
 
     CELER_CUDA_CALL(cudaDeviceSynchronize());
-
-    // Resize the vector of track initializers
-    initializers.resize(initializers.size() - num_new_tracks);
-    initializers.track_count() += num_new_tracks;
 }
 
 //---------------------------------------------------------------------------//
@@ -186,91 +173,98 @@ void initialize_tracks(StatePointers          states,
  * Find empty slots in the vector of tracks and count the number of secondaries
  * that survived cutoffs for each interaction.
  */
-void find_vacancies(StatePointers states, TrackInitializerStore& initializers)
+void process_post_interaction(StatePointers            states,
+                              TrackInitializerPointers inits)
 {
-    // Resize the vector of vacancies to be equal to the number of tracks
-    initializers.num_vacancies() = states.size();
-
     KernelParamCalculator calc_launch_params;
     auto                  lparams = calc_launch_params(states.size());
-    find_vacancies_kernel<<<lparams.grid_size, lparams.block_size>>>(
-        states, initializers.device_pointers());
+    process_post_interaction_kernel<<<lparams.grid_size, lparams.block_size>>>(
+        states, inits);
 
     CELER_CUDA_CALL(cudaDeviceSynchronize());
-
-    // Remove all the elements in the vacancy vector that were flagged as
-    // active tracks, so we are left with a vector containing the (sorted)
-    // indices of the empty slots
-    span<size_type> vacancies = initializers.device_pointers().vacancies;
-    thrust::device_ptr<size_type> end = thrust::remove_if(
-        thrust::device_pointer_cast(vacancies.data()),
-        thrust::device_pointer_cast(vacancies.data() + vacancies.size()),
-        occupied(occupied_flag()));
-
-    // Resize the vector of vacancies to be equal to the number of empty slots
-    initializers.num_vacancies() = thrust::raw_pointer_cast(end)
-                                   - vacancies.data();
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * Create track initializers from primary particles.
  */
-void process_primaries(span<const Primary>    primaries,
-                       TrackInitializerStore& initializers)
+void process_primaries(span<const Primary>      primaries,
+                       TrackInitializerPointers inits)
 {
-    REQUIRE(primaries.size() <= initializers.capacity() - initializers.size());
-
     KernelParamCalculator calc_launch_params;
     auto                  lparams = calc_launch_params(primaries.size());
     process_primaries_kernel<<<lparams.grid_size, lparams.block_size>>>(
-        primaries, initializers.device_pointers());
+        primaries, inits);
 
     CELER_CUDA_CALL(cudaDeviceSynchronize());
-
-    // Resize the vector of track initializers
-    initializers.resize(initializers.size() + primaries.size());
 }
 
 //---------------------------------------------------------------------------//
 /*!
  * Create track initializers from secondary particles.
  */
-void process_secondaries(StatePointers          states,
-                         ParamPointers          params,
-                         TrackInitializerStore& initializers)
+void process_secondaries(StatePointers            states,
+                         ParamPointers            params,
+                         TrackInitializerPointers inits)
 {
-    // Sum the total number secondaries produced in all interactions
-    span<size_type> counts = initializers.device_pointers().secondary_counts;
-    size_type       num_secondaries = thrust::reduce(
+    KernelParamCalculator calc_launch_params;
+    auto                  lparams = calc_launch_params(states.size());
+    process_secondaries_kernel<<<lparams.grid_size, lparams.block_size>>>(
+        states, params, inits);
+
+    CELER_CUDA_CALL(cudaDeviceSynchronize());
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Remove all elements in the vacancy vector that were flagged as active
+ * tracks.
+ */
+size_type remove_occupied(span<size_type> vacancies)
+{
+    thrust::device_ptr<size_type> end = thrust::remove_if(
+        thrust::device_pointer_cast(vacancies.data()),
+        thrust::device_pointer_cast(vacancies.data() + vacancies.size()),
+        occupied(occupied_flag()));
+
+    CELER_CUDA_CALL(cudaDeviceSynchronize());
+
+    // New size of the vacancy vector
+    size_type result = thrust::raw_pointer_cast(end) - vacancies.data();
+
+    return result;
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Sum the total number of surviving secondaries.
+ */
+size_type reduce_counts(span<size_type> counts)
+{
+    size_type result = thrust::reduce(
         thrust::device_pointer_cast(counts.data()),
         thrust::device_pointer_cast(counts.data()) + counts.size(),
-        0,
+        size_type(0),
         thrust::plus<size_type>());
 
-    // TODO: if we don't have space for all the secondaries, we will need to
-    // buffer the current track initializers
-    REQUIRE(num_secondaries <= initializers.capacity() - initializers.size());
+    CELER_CUDA_CALL(cudaDeviceSynchronize());
+    return result;
+}
 
-    // The exclusive prefix sum of the number of secondaries produced in each
-    // interaction is used to get the starting index in the vector of track
-    // initializers for creating initializers from secondaries from an
-    // interaction
+//---------------------------------------------------------------------------//
+/*!
+ * Calculate the exclusive prefix sum of the number of surviving secondaries
+ * from each interaction.
+ */
+void exclusive_scan_counts(span<size_type> counts)
+{
     thrust::exclusive_scan(
         thrust::device_pointer_cast(counts.data()),
         thrust::device_pointer_cast(counts.data()) + counts.size(),
         counts.data(),
-        0);
-
-    KernelParamCalculator calc_launch_params;
-    auto                  lparams = calc_launch_params(states.size());
-    process_secondaries_kernel<<<lparams.grid_size, lparams.block_size>>>(
-        states, params, initializers.device_pointers());
+        size_type(0));
 
     CELER_CUDA_CALL(cudaDeviceSynchronize());
-
-    // Resize the vector of track initializers
-    initializers.resize(initializers.size() + num_secondaries);
 }
 
 //---------------------------------------------------------------------------//

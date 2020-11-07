@@ -14,11 +14,11 @@ namespace celeritas
 {
 //---------------------------------------------------------------------------//
 /*!
- * View to the lightweight track data.
+ * View to the data used to initialize new tracks.
  */
 struct TrackInitializerPointers
 {
-    span<TrackInitializer> tracks;
+    span<TrackInitializer> initializers;
     span<size_type>        vacancies;
     span<size_type>        secondary_counts;
     size_type              track_count;

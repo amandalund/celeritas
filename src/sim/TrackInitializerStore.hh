@@ -8,8 +8,11 @@
 #pragma once
 
 #include "base/DeviceVector.hh"
-#include "TrackInitializerPointers.hh"
 #include "physics/base/ParticleStateStore.hh"
+#include "physics/base/SecondaryAllocatorStore.hh"
+#include "ParamPointers.hh"
+#include "StatePointers.hh"
+#include "TrackInitializerPointers.hh"
 
 namespace celeritas
 {
@@ -22,43 +25,29 @@ class TrackInitializerStore
   public:
     // Construct with the maximum number of track initializers to store on
     // device
-    explicit TrackInitializerStore(ParticleStateStore& states,
-                                   size_type           capacity);
-
-    // Get the number of elements
-    size_type capacity() const { return initializers_.size(); }
-
-    // Get the number of elements
-    size_type size() const { return size_; }
-
-    // Change the size (without changing capacity)
-    void resize(size_type size);
-
-    // Modifier for the number of empty track slots
-    size_type& num_vacancies() { return num_vacancies_; }
-
-    // Modifier for the total number of initialized tracks
-    size_type& track_count() { return track_count_; }
+    explicit TrackInitializerStore(ParticleStateStore&      particles,
+                                   SecondaryAllocatorStore& secondaries);
 
     // Get a view to the managed data
     TrackInitializerPointers device_pointers();
 
+    // Initialize track states on device.
+    void initialize_tracks(StatePointers states, ParamPointers params);
+
+    // Find vacant slots and count surviving secondaries per track
+    void find_vacancies(StatePointers states);
+
+    // Create track initializers on device from primary particles
+    void create_from_primaries(span<const Primary> primaries);
+
+    // Create track initializers on device from secondary particles.
+    void create_from_secondaries(StatePointers states, ParamPointers params);
+
   private:
-    // TODO: shrinkable device vector
-    // Track initializers
     DeviceVector<TrackInitializer> initializers_;
-    size_type                      size_;
-
-    // Indices of empty slots in the track vector
-    DeviceVector<size_type> vacancies_;
-    size_type               num_vacancies_;
-
-    // Number of secondaries produced in each interaction
-    DeviceVector<size_type> secondary_counts_;
-
-    // Total number of tracks that have been initialized in the simulation.
-    // This is used to set the track ID of secondaries
-    size_type track_count_;
+    DeviceVector<size_type>        vacancies_;
+    DeviceVector<size_type>        secondary_counts_;
+    size_type                      track_count_;
 };
 
 //---------------------------------------------------------------------------//

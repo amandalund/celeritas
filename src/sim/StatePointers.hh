@@ -8,7 +8,7 @@
 #pragma once
 
 #include "base/Types.hh"
-//#include "geometry/GeoStatePointers.hh"
+#include "geometry/GeoStatePointers.hh"
 #include "physics/base/Interaction.hh"
 #include "physics/base/ParticleStatePointers.hh"
 #include "random/cuda/RngStatePointers.hh"
@@ -23,14 +23,14 @@ namespace celeritas
 struct StatePointers
 {
     ParticleStatePointers particle;
-    // GeoStatePointers      geo;
+    GeoStatePointers      geo;
     SimStatePointers  sim;
     RngStatePointers  rng;
     span<Interaction> interactions;
 
     explicit CELER_FUNCTION operator bool() const
     {
-        return particle && /*geo && */ sim && rng && !interactions.empty();
+        return particle && geo && sim && rng && !interactions.empty();
     }
 
     //! Number of tracks

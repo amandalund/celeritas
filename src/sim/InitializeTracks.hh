@@ -7,12 +7,12 @@
 //---------------------------------------------------------------------------//
 #pragma once
 
-#include "TrackInitializerStore.hh"
 #include "base/KernelParamCalculator.cuda.hh"
 #include "base/Span.hh"
 #include "physics/base/Primary.hh"
 #include "ParamPointers.hh"
 #include "StatePointers.hh"
+#include "TrackInitializerPointers.hh"
 
 namespace celeritas
 {
@@ -38,25 +38,38 @@ CELER_CONSTEXPR_FUNCTION size_type occupied_flag()
 
 //---------------------------------------------------------------------------//
 // Initialize the track states on device.
-void initialize_tracks(StatePointers          states,
-                       ParamPointers          params,
-                       TrackInitializerStore& initializers);
+void process_tracks(StatePointers            states,
+                    ParamPointers            params,
+                    TrackInitializerPointers inits);
 
 //---------------------------------------------------------------------------//
 // Find empty slots in the vector of track states and count the number of
 // secondaries that survived cutoffs for each interaction.
-void find_vacancies(StatePointers states, TrackInitializerStore& initializers);
+void process_post_interaction(StatePointers            states,
+                              TrackInitializerPointers inits);
 
 //---------------------------------------------------------------------------//
-// Create track initializers on device from primary particle.s
-void process_primaries(span<const Primary>    primaries,
-                       TrackInitializerStore& initializers);
+// Create track initializers on device from primary particles
+void process_primaries(span<const Primary>      primaries,
+                       TrackInitializerPointers inits);
 
 //---------------------------------------------------------------------------//
 // Create track initializers on device from secondary particles.
-void process_secondaries(StatePointers          states,
-                         ParamPointers          params,
-                         TrackInitializerStore& initializers);
+void process_secondaries(StatePointers            states,
+                         ParamPointers            params,
+                         TrackInitializerPointers inits);
+
+//---------------------------------------------------------------------------//
+// Remove all elements in the vacancy vector that were flagged as alive
+size_type remove_occupied(span<size_type> vacancies);
+
+//---------------------------------------------------------------------------//
+// Sum the total number of surviving secondaries.
+size_type reduce_counts(span<size_type> counts);
+
+//---------------------------------------------------------------------------//
+// Calculate the exclusive prefix sum of the number of surviving secondaries
+void exclusive_scan_counts(span<size_type> counts);
 
 //---------------------------------------------------------------------------//
 } // namespace celeritas

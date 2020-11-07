@@ -9,7 +9,7 @@
 
 #include "base/DeviceVector.hh"
 #include "physics/base/ParticleStateStore.hh"
-//#include "geometry/GeoStateStore.hh"
+#include "geometry/GeoStateStore.hh"
 #include "random/cuda/RngStateStore.hh"
 #include "SimStateStore.hh"
 #include "StatePointers.hh"
@@ -25,9 +25,9 @@ class StateStore
   public:
     // Construct with the track state storage objects
     StateStore(ParticleStateStore& particle_states,
-               // GeoStateStore&      geo_states,
-               SimStateStore& sim_states,
-               RngStateStore& rng_states);
+               GeoStateStore&      geo_states,
+               SimStateStore&      sim_states,
+               RngStateStore&      rng_states);
 
     // Get the total number of tracks
     size_type size() const { return particle_states_.size(); }
@@ -37,7 +37,7 @@ class StateStore
 
   private:
     ParticleStateStore& particle_states_;
-    // GeoStateStore&            geo_states_;
+    GeoStateStore&            geo_states_;
     SimStateStore&            sim_states_;
     RngStateStore&            rng_states_;
     DeviceVector<Interaction> interactions_;
