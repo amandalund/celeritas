@@ -31,7 +31,7 @@ struct occupied
 //---------------------------------------------------------------------------//
 // Mark a track state as occupied, i.e., the particle in that slot is still
 // alive, so a new track can't be initialized there.
-CELER_CONSTEXPR_FUNCTION size_type occupied_flag()
+CELER_CONSTEXPR_FUNCTION size_type flag_alive()
 {
     return numeric_limits<size_type>::max();
 }
@@ -45,8 +45,9 @@ void process_tracks(StatePointers            states,
 //---------------------------------------------------------------------------//
 // Find empty slots in the vector of track states and count the number of
 // secondaries that survived cutoffs for each interaction.
-void process_post_interaction(StatePointers            states,
-                              TrackInitializerPointers inits);
+void process_interaction_change(StatePointers            states,
+                                ParamPointers            params,
+                                TrackInitializerPointers inits);
 
 //---------------------------------------------------------------------------//
 // Create track initializers on device from primary particles
@@ -61,7 +62,7 @@ void process_secondaries(StatePointers            states,
 
 //---------------------------------------------------------------------------//
 // Remove all elements in the vacancy vector that were flagged as alive
-size_type remove_occupied(span<size_type> vacancies);
+size_type remove_if_occupied(span<size_type> vacancies);
 
 //---------------------------------------------------------------------------//
 // Sum the total number of surviving secondaries.

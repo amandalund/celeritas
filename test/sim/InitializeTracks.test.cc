@@ -130,24 +130,18 @@ TEST_F(TrackInitTest, run)
     // Launch kernel to process interactions
     interact(states, params, secondaries.device_pointers());
 
-    // Launch kernel to find the indices of the empty slots in track vector and
-    // count the number of secondaries produced in each interaction
-    track_init.find_vacancies(states);
-
-    // Check the vacancies
-    output_vacancies   = vacancies_test(track_init.device_pointers());
-    expected_vacancies = {1, 4, 7};
-    EXPECT_VEC_EQ(expected_vacancies, output_vacancies);
-
     // Launch a kernel to create track initializers from
     // interactions/secondaries
     track_init.create_from_secondaries(states, params);
 
+    // Check the vacancies
+    output_vacancies   = vacancies_test(track_init.device_pointers());
+    expected_vacancies = {1, 4};
+    EXPECT_VEC_EQ(expected_vacancies, output_vacancies);
+
     // Check the energies of the track initializers created from secondaries
     output_initializers   = initializers_test(track_init.device_pointers());
-    expected_initializers = {10., 20., 30., 9.,  18., 27., 8.,  16., 24., 7.,
-                             14., 21., 6.,  12., 18., 5.,  10., 15., 4.,  8.,
-                             12., 3.,  6.,  9.,  2.,  4.,  6.,  1.,  2.,  3.};
+    expected_initializers = {8., 16., 7., 4., 8.};
     EXPECT_VEC_SOFT_EQ(expected_initializers, output_initializers);
 
     // Initialize secondaries on device
@@ -155,7 +149,7 @@ TEST_F(TrackInitTest, run)
 
     // Check the energies of the initialized tracks
     output_tracks   = tracks_test(states, params);
-    expected_tracks = {1000., 3., 800., 700., 2., 500., 400., 1., 200., 100.};
+    expected_tracks = {1000., 8., 800., 700., 4., 500., 400., 3., 200., 100.};
     EXPECT_VEC_SOFT_EQ(expected_tracks, output_tracks);
 }
 

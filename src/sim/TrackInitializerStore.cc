@@ -19,6 +19,7 @@ namespace celeritas
 TrackInitializerStore::TrackInitializerStore(
     ParticleStateStore& particles, SecondaryAllocatorStore& secondaries)
     : initializers_(secondaries.capacity())
+    , parent_(secondaries.capacity())
     , vacancies_(particles.size())
     , secondary_counts_(particles.size())
     , track_count_(0)
@@ -28,8 +29,9 @@ TrackInitializerStore::TrackInitializerStore(
     std::iota(host_vacancies.begin(), host_vacancies.end(), 0);
     vacancies_.copy_to_device(make_span(host_vacancies));
 
-    // Start with an empty vector of track initializers
+    // Start with an empty vector of track initializers and parent thread IDs
     initializers_.resize(0);
+    parent_.resize(0);
 }
 
 //---------------------------------------------------------------------------//
@@ -40,56 +42,13 @@ TrackInitializerPointers TrackInitializerStore::device_pointers()
 {
     TrackInitializerPointers result;
     result.initializers     = initializers_.device_pointers();
+    result.parent           = parent_.device_pointers();
     result.vacancies        = vacancies_.device_pointers();
     result.secondary_counts = secondary_counts_.device_pointers();
     result.track_count      = track_count_;
 
     ENSURE(result);
     return result;
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * Initialize track states on device.
- */
-void TrackInitializerStore::initialize_tracks(StatePointers states,
-                                              ParamPointers params)
-{
-    // The number of new tracks to initialize is the smaller of the number of
-    // empty slots in the track vector and the number of track initializers
-    size_type num_tracks = std::min(vacancies_.size(), initializers_.size());
-    vacancies_.resize(num_tracks);
-
-    // Launch a kernel to initialize tracks on device
-    process_tracks(states, params, this->device_pointers());
-
-    // Resize the vector of track initializers
-    initializers_.resize(initializers_.size() - num_tracks);
-
-    // Update the total number of tracks initialized in the simulation
-    track_count_ += num_tracks;
-}
-
-//---------------------------------------------------------------------------//
-/*!
- * Find empty slots in the vector of track states and count the number of
- * secondaries that survived cutoffs for each interaction.
- */
-void TrackInitializerStore::find_vacancies(StatePointers states)
-{
-    // Resize the vector of vacancies to be equal to the number of tracks
-    vacancies_.resize(states.size());
-
-    // Launch a kernel to find the indices of the empty track slots and the
-    // number of surviving secondaries per track
-    process_post_interaction(states, this->device_pointers());
-
-    // Remove all elements in the vacancy vector that were flagged as active
-    // tracks, leaving the (sorted) indices of the empty slots
-    size_type num_vac = remove_occupied(vacancies_.device_pointers());
-
-    // Resize the vector of vacancies to be equal to the number of empty slots
-    vacancies_.resize(num_vac);
 }
 
 //---------------------------------------------------------------------------//
@@ -115,6 +74,18 @@ void TrackInitializerStore::create_from_primaries(span<const Primary> primaries)
 void TrackInitializerStore::create_from_secondaries(StatePointers states,
                                                     ParamPointers params)
 {
+    // Resize the vector of vacancies to be equal to the number of tracks
+    vacancies_.resize(states.size());
+
+    // Launch a kernel to find the indices of the empty track slots and the
+    // number of surviving secondaries per track
+    process_interaction_change(states, params, this->device_pointers());
+
+    // Remove all elements in the vacancy vector that were flagged as active
+    // tracks, leaving the (sorted) indices of the empty slots
+    size_type num_vac = remove_if_occupied(vacancies_.device_pointers());
+    vacancies_.resize(num_vac);
+
     // Sum the total number secondaries produced in all interactions
     size_type num_sec = reduce_counts(secondary_counts_.device_pointers());
 
@@ -133,6 +104,29 @@ void TrackInitializerStore::create_from_secondaries(StatePointers states,
 
     // Resize the vector of track initializers
     initializers_.resize(initializers_.size() + num_sec);
+    parent_.resize(num_sec);
+}
+
+//---------------------------------------------------------------------------//
+/*!
+ * Initialize track states on device.
+ */
+void TrackInitializerStore::initialize_tracks(StatePointers states,
+                                              ParamPointers params)
+{
+    // The number of new tracks to initialize is the smaller of the number of
+    // empty slots in the track vector and the number of track initializers
+    size_type num_tracks = std::min(vacancies_.size(), initializers_.size());
+    vacancies_.resize(num_tracks);
+
+    // Launch a kernel to initialize tracks on device
+    process_tracks(states, params, this->device_pointers());
+
+    // Resize the vector of track initializers
+    initializers_.resize(initializers_.size() - num_tracks);
+
+    // Update the total number of tracks initialized in the simulation
+    track_count_ += num_tracks;
 }
 
 //---------------------------------------------------------------------------//

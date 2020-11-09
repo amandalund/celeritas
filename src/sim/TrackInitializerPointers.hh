@@ -19,6 +19,7 @@ namespace celeritas
 struct TrackInitializerPointers
 {
     span<TrackInitializer> initializers;
+    span<size_type>        parent;
     span<size_type>        vacancies;
     span<size_type>        secondary_counts;
     size_type              track_count;

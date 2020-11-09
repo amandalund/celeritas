@@ -45,7 +45,6 @@ if(CELERITAS_USE_CUDA)
     base/Memory.cu
     random/cuda/RngStateInit.cu
     random/cuda/RngStateStore.cc
-    sim/InitializeTracks.cu
     sim/TrackInitializerStore.cc
   )
   list(APPEND PRIVATE_DEPS CUDA::cudart)
@@ -85,8 +84,9 @@ if(CELERITAS_USE_VecGeom)
   if(CELERITAS_USE_CUDA)
     list(APPEND SOURCES
       geometry/detail/VGNavStateStore.cuda.cc
+      sim/InitializeTracks.cu
     )
-    list(APPEND PRIVATE_DEPS VecGeom::vecgeomcuda)
+    list(APPEND PRIVATE_DEPS VecGeom::vecgeomcuda VecGeom::vecgeomcuda_static)
   else()
     list(APPEND SOURCES
       geometry/detail/VGNavStateStore.nocuda.cc
@@ -96,6 +96,14 @@ endif()
 
 add_library(celeritas ${SOURCES})
 add_library(Celeritas::Core ALIAS celeritas)
+
+if(CELERITAS_USE_VecGeom)
+  set_target_properties(celeritas PROPERTIES
+    LINKER_LANGUAGE CUDA
+    CUDA_SEPARABLE_COMPILATION ON
+  )
+endif()
+
 target_link_libraries(celeritas
   PRIVATE ${PRIVATE_DEPS}
   PUBLIC ${PUBLIC_DEPS}

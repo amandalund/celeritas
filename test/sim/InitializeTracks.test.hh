@@ -32,9 +32,10 @@ struct Interactor
 
     CELER_FUNCTION Interaction operator()()
     {
-        // Create secondary particles
-        unsigned long int alloc_size = 4;
-        Secondary*        allocated  = this->allocate_secondaries(alloc_size);
+        // Create secondary particles for some of the tracks
+        unsigned long int alloc_size
+            = static_cast<int>(inc_energy.value() / 100 - 1) % 4;
+        Secondary* allocated = this->allocate_secondaries(alloc_size);
         if (!allocated)
         {
             return Interaction::from_failure();
