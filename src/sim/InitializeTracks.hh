@@ -19,18 +19,18 @@ namespace celeritas
 //---------------------------------------------------------------------------//
 // Predicate used to check whether the track at a given index in the track
 // vector is alive
-struct occupied
+struct alive
 {
     size_type flag;
 
-    occupied(size_type flag) : flag(flag){};
+    alive(size_type flag) : flag(flag){};
 
     CELER_FUNCTION bool operator()(const size_type x) { return x == flag; }
 };
 
 //---------------------------------------------------------------------------//
-// Mark a track state as occupied, i.e., the particle in that slot is still
-// alive, so a new track can't be initialized there.
+// Mark a track state as alive to indicate a new track can't be initialized
+// there.
 CELER_CONSTEXPR_FUNCTION size_type flag_alive()
 {
     return numeric_limits<size_type>::max();
@@ -38,16 +38,16 @@ CELER_CONSTEXPR_FUNCTION size_type flag_alive()
 
 //---------------------------------------------------------------------------//
 // Initialize the track states on device.
-void process_tracks(StatePointers            states,
-                    ParamPointers            params,
-                    TrackInitializerPointers inits);
+void init_tracks(StatePointers            states,
+                 ParamPointers            params,
+                 TrackInitializerPointers inits);
 
 //---------------------------------------------------------------------------//
-// Find empty slots in the vector of track states and count the number of
-// secondaries that survived cutoffs for each interaction.
-void process_interaction_change(StatePointers            states,
-                                ParamPointers            params,
-                                TrackInitializerPointers inits);
+// Identify which tracks are still alive and count the number of secondaries
+// that survived cutoffs for each interaction.
+void locate_alive(StatePointers            states,
+                  ParamPointers            params,
+                  TrackInitializerPointers inits);
 
 //---------------------------------------------------------------------------//
 // Create track initializers on device from primary particles
@@ -62,7 +62,7 @@ void process_secondaries(StatePointers            states,
 
 //---------------------------------------------------------------------------//
 // Remove all elements in the vacancy vector that were flagged as alive
-size_type remove_if_occupied(span<size_type> vacancies);
+size_type remove_if_alive(span<size_type> vacancies);
 
 //---------------------------------------------------------------------------//
 // Sum the total number of surviving secondaries.
