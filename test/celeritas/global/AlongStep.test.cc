@@ -290,7 +290,7 @@ TEST_F(Em3AlongStepTest, msc_nofluct)
         EXPECT_SOFT_NEAR(0.28579817262705, result.eloss, 5e-4);
         EXPECT_SOFT_NEAR(0.13028709259427, result.displacement, 5e-4);
         EXPECT_SOFT_NEAR(0.42060290539404, result.angle, 1e-3);
-        EXPECT_SOFT_EQ(5.3240431819014e-12, result.time);
+        EXPECT_SOFT_EQ(3.6472430226082838e-12, result.time);
         EXPECT_SOFT_EQ(0.1502064087009, result.step);
         EXPECT_EQ("msc-range", result.action);
     }

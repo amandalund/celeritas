@@ -124,13 +124,6 @@ inline CELER_FUNCTION void along_step(MH&& msc,
         }
     }
 
-    if (use_msc)
-    {
-        // Scatter the track and transform the "geometrical" step back to
-        // "physical" step
-        msc.apply_step(track, &step_limit);
-    }
-
     // Update track's lab-frame time using the beginning-of-step speed
     {
         CELER_ASSERT(!particle.is_stopped());
@@ -143,6 +136,13 @@ inline CELER_FUNCTION void along_step(MH&& msc,
             real_type delta_time = step_limit.step / speed;
             sim.add_time(delta_time);
         }
+    }
+
+    if (use_msc)
+    {
+        // Scatter the track and transform the "geometrical" step back to
+        // "physical" step
+        msc.apply_step(track, &step_limit);
     }
 
     if (eloss.is_applicable(track))
