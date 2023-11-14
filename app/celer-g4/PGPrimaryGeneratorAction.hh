@@ -59,7 +59,7 @@ class PGPrimaryGeneratorAction final : public G4VUserPrimaryGeneratorAction
     PositionSampler sample_pos_;
     DirectionSampler sample_dir_;
     size_type primary_count_{0};
-    size_type event_count_{0};
+    size_type seed_{0};
 };
 
 //---------------------------------------------------------------------------//

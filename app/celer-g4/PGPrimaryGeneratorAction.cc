@@ -34,9 +34,7 @@ PGPrimaryGeneratorAction::PGPrimaryGeneratorAction()
     auto options = GlobalSetup::Instance()->GetPrimaryGeneratorOptions();
     CELER_ASSERT(options);
 
-    // Seed with an independent value for each thread
-    rng_.seed(options.seed + get_geant_thread_id());
-
+    seed_ = options.seed;
     num_events_ = options.num_events;
     primaries_per_event_ = options.primaries_per_event;
     sample_energy_ = make_energy_sampler(options.energy);
@@ -59,11 +57,18 @@ PGPrimaryGeneratorAction::PGPrimaryGeneratorAction()
 void PGPrimaryGeneratorAction::GeneratePrimaries(G4Event* event)
 {
     CELER_EXPECT(event);
+    CELER_EXPECT(event->GetEventID() >= 0);
 
-    if (event_count_ == num_events_)
+    size_type event_id = event->GetEventID();
+    if (event_id >= num_events_)
     {
         return;
     }
+
+    // Seed with an independent value for each event. For reproducibility, it
+    // is necessary to reseed the rng for each event because Geant4 events are
+    // not guaranteed to be mapped to the same thread across multiple runs.
+    rng_.seed(seed_ + event_id);
 
     for (size_type i = 0; i < primaries_per_event_; ++i)
     {
@@ -84,7 +89,6 @@ void PGPrimaryGeneratorAction::GeneratePrimaries(G4Event* event)
                 gun_.GetParticlePosition()));
         }
     }
-    ++event_count_;
 
     CELER_ENSURE(event->GetNumberOfPrimaryVertex()
                  == static_cast<int>(primaries_per_event_));
