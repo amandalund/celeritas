@@ -39,6 +39,9 @@ using DetectorId = OpaqueId<struct Detector_>;
 //! Identifier for a material fill
 using GeoMatId = OpaqueId<struct GeoMaterial_>;
 
+//! Opaque index to a material with optical properties
+using OptMatId = OpaqueId<struct OpticalMaterial_, unsigned int>;
+
 //! Combined boundary/interface surface identifier
 using SurfaceId = OpaqueId<struct Surface_, unsigned int>;
 

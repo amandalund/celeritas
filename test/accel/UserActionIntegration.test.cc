@@ -15,6 +15,7 @@
 #include <G4StepPoint.hh>
 
 #include "corecel/math/ArrayUtils.hh"
+#include "geocel/GeantGeoParams.hh"
 #include "geocel/ScopedGeantExceptionHandler.hh"
 #include "geocel/UnitUtils.hh"
 #include "geocel/g4/Convert.hh"
@@ -241,17 +242,18 @@ void LSOOSteppingAction::UserSteppingAction(G4Step const* step)
         return;
     }
 
+    auto geo = celeritas::global_geant_geo().lock();
+    CELER_VALIDATE(geo, << "global Geant4 geometry is not loaded");
+
     auto* pre_step = step->GetPreStepPoint();
     auto* post_step = step->GetPostStepPoint();
     CELER_ASSERT(pre_step && post_step);
 
     // Create distribution and push to Celeritas
-    // TODO: Get optical material ID
     optical::GeneratorDistributionData data;
     data.step_length = convert_from_geant(step->GetStepLength(), clhep_length);
     data.charge = units::ElementaryCharge{
         static_cast<real_type>(post_step->GetCharge())};
-    data.material = OptMatId(0);
     auto& pre = data.points[StepPoint::pre];
     pre.speed = units::LightSpeed(pre_step->GetBeta());
     pre.time = convert_from_geant(pre_step->GetGlobalTime(), clhep_time);
@@ -260,6 +262,7 @@ void LSOOSteppingAction::UserSteppingAction(G4Step const* step)
     post.speed = units::LightSpeed(post_step->GetBeta());
     post.time = convert_from_geant(post_step->GetGlobalTime(), clhep_time);
     post.pos = convert_from_geant(post_step->GetPosition(), clhep_length);
+    data.material = geo->find_opt_mat_at(pre.pos);
 
     auto& gen_offload = dynamic_cast<LocalOpticalGenOffload&>(local);
     if (num_cherenkov > 0)

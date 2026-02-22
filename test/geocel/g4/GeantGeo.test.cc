@@ -13,6 +13,7 @@
 
 #include "corecel/Config.hh"
 
+#include "corecel/OpaqueIdUtils.hh"
 #include "corecel/ScopedLogStorer.hh"
 #include "corecel/cont/Span.hh"
 #include "corecel/io/ColorUtils.hh"
@@ -597,6 +598,23 @@ TEST_F(OpticalSurfacesTest, model)
 TEST_F(OpticalSurfacesTest, trace)
 {
     this->impl().test_trace();
+}
+
+TEST_F(OpticalSurfacesTest, point_to_optmat)
+{
+    auto const& geo = *this->geometry();
+
+    std::vector<Real3> points{
+        {20, 0, 0}, {-20, 0, 0}, {0, 0, -15}, {20, 20, 20}};
+
+    std::vector<int> result;
+    for (auto const& point : points)
+    {
+        auto opt_mat_id = geo.find_opt_mat_at(from_cm(point));
+        result.push_back(id_to_int(opt_mat_id));
+    }
+    static int const expected_result[] = {1, 2, 2, -1};
+    EXPECT_VEC_EQ(expected_result, result);
 }
 
 //---------------------------------------------------------------------------//

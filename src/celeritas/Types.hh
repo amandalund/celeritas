@@ -37,9 +37,6 @@ using IsotopeId = OpaqueId<struct IsotopeRecord>;
 //! Opaque index of model in the list of physics processes
 using ModelId = OpaqueId<struct Model_>;
 
-//! Opaque index to a material with optical properties
-using OptMatId = OpaqueId<struct OpticalMaterial_, unsigned int>;
-
 //! Opaque index to ParticleRecord in a vector: represents a particle type
 using ParticleId = OpaqueId<struct Particle_>;
 

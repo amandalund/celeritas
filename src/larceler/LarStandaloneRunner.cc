@@ -42,6 +42,9 @@ auto LarStandaloneRunner::operator()(VecSED const& sed) -> VecBTR
     std::vector<celeritas::optical::GeneratorDistributionData> gdd;
     gdd.reserve(sed.size());
 
+    auto geo = celeritas::global_geant_geo().lock();
+    CELER_VALIDATE(geo, << "global Geant4 geometry is not loaded");
+
     for (auto const& edep : sed)
     {
         // Convert LArSoft sim edeps to Celeritas generator distribution data
@@ -50,8 +53,6 @@ auto LarStandaloneRunner::operator()(VecSED const& sed) -> VecBTR
         data.num_photons = edep.NumPhotons();
         data.primary = id_cast<PrimaryId>(edep.TrackID());
         data.step_length = convert_from_larsoft<LarsoftLen>(edep.StepLength());
-        //! XXX Given post-step point find optical material
-        data.material = OptMatId{0};
         // Assume continuous energy loss along the step
         //! \todo For neutral particles, set this to 0 (LED at post-step point)
         data.continuous_edep_fraction = 1;
@@ -63,6 +64,7 @@ auto LarStandaloneRunner::operator()(VecSED const& sed) -> VecBTR
             = convert_from_larsoft<LarsoftTime>(edep.EndT());
         data.points[StepPoint::post].pos
             = convert_from_larsoft<LarsoftLen>(edep.End());
+        data.material = geo->find_opt_mat_at(data.points[StepPoint::pre].pos);
         CELER_ASSERT(data);
         gdd.push_back(data);
     }

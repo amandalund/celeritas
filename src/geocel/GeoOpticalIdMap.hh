@@ -10,7 +10,6 @@
 #include <G4MaterialTable.hh>
 
 #include "geocel/Types.hh"
-#include "celeritas/Types.hh"
 
 namespace celeritas
 {
