@@ -794,6 +794,8 @@ problem(inp::OpticalProblem const& p, ImportData const& imported)
                    << "an optical tracking loop was requested but no optical "
                       "materials are present");
 
+    OpticalProblemLoaded result;
+
     // Load geometry and model
     if (auto* filename = std::get_if<std::string>(&p.model.geometry))
     {
@@ -809,6 +811,7 @@ problem(inp::OpticalProblem const& p, ImportData const& imported)
                               "geometry surface definitions: default physics "
                               "will be used for all surfaces";
     }
+    result.volume = loaded_model.volume;
 
     // Set up streams
     CELER_VALIDATE(p.num_streams > 0,
@@ -821,8 +824,6 @@ problem(inp::OpticalProblem const& p, ImportData const& imported)
     // Build optical params
     auto params = build_optical_params(p, std::move(loaded_model), imported);
     CELER_ASSERT(params);
-
-    OpticalProblemLoaded result;
 
     using SPGeneratorBase = std::shared_ptr<optical::GeneratorBase>;
 

@@ -31,6 +31,7 @@ class OffloadWriter;
 class OpticalCollector;
 class RootFileManager;
 class StepCollector;
+class VolumeParams;
 struct ImportData;
 
 namespace setup
@@ -73,6 +74,8 @@ struct OpticalProblemLoaded
     std::shared_ptr<optical::Transporter> transporter;
     //! Optical photon generation action
     std::shared_ptr<optical::GeneratorBase> generator;
+    //! Canonical volume data
+    std::shared_ptr<VolumeParams> volume;
 };
 
 //---------------------------------------------------------------------------//

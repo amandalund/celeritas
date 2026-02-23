@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "corecel/Macros.hh"
+#include "celeritas/ext/OptMatIdFinder.hh"
 #include "celeritas/inp/StandaloneInput.hh"
 
 #include "detail/LarCelerConfig.hh"
@@ -74,6 +75,7 @@ class LarStandaloneRunner
     using LarsoftLen = Quantity<celeritas::units::Centimeter, double>;
 
     std::shared_ptr<optical::Runner> runner_;
+    OptMatIdFinder find_optmat_;
 };
 
 //---------------------------------------------------------------------------//

@@ -129,9 +129,6 @@ class GeantGeoParams final : public GeoParamsInterface,
     // Get the volume instance containing the global point
     VolumeInstanceId find_volume_instance_at(Real3 const&) const final;
 
-    // Get the optical material ID at the global point
-    OptMatId find_opt_mat_at(Real3 const&) const;
-
     //// SURFACES ////
 
     //! Get the number of surfaces (TODO: maybe live in surface params?)
@@ -354,10 +351,6 @@ inline VolumeId GeantGeoParams::geant_to_id(G4LogicalVolume const&) const
 }
 inline VolumeInstanceId
 GeantGeoParams::find_volume_instance_at(Real3 const&) const
-{
-    CELER_ASSERT_UNREACHABLE();
-}
-inline OptMatId GeantGeoParams::find_opt_mat_at(Real3 const&) const
 {
     CELER_ASSERT_UNREACHABLE();
 }

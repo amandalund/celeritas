@@ -903,35 +903,6 @@ GeantGeoParams::find_volume_instance_at(Real3 const& point) const
 
 //---------------------------------------------------------------------------//
 /*!
- * Get the optical material ID at the global point.
- */
-OptMatId GeantGeoParams::find_opt_mat_at(Real3 const& point) const
-{
-    if (geo_to_opt_->empty())
-    {
-        // No optical materials present
-        return {};
-    }
-
-    // Get the logical volume at the point
-    auto vi_id = this->find_volume_instance_at(point);
-    CELER_VALIDATE(vi_id, << "Could not locate the glocal point " << point);
-    auto const* g4pv = this->id_to_geant(vi_id);
-    CELER_ASSERT(g4pv);
-    auto* g4lv = g4pv->GetLogicalVolume();
-    CELER_ASSERT(g4lv);
-
-    // Get the optical material ID from the geometry material
-    auto* g4mat = g4lv->GetMaterial();
-    if (!g4mat)
-    {
-        return {};
-    }
-    return (*geo_to_opt_)[this->geant_to_id(*g4mat)];
-}
-
-//---------------------------------------------------------------------------//
-/*!
  * Get the world bbox.
  *
  * This assumes no transformation on the global PV.

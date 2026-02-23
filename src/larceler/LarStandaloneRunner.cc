@@ -12,7 +12,6 @@
 
 #include "corecel/Assert.hh"
 #include "corecel/io/Logger.hh"
-#include "geocel/GeantGeoParams.hh"
 #include "celeritas/optical/Runner.hh"
 
 #include "Convert.hh"
@@ -25,6 +24,7 @@ namespace celeritas
  */
 LarStandaloneRunner::LarStandaloneRunner(Input&& i)
     : runner_(std::make_shared<optical::Runner>(std::move(i)))
+    , find_optmat_(runner_.params().geometry())
 {
 }
 
@@ -41,9 +41,6 @@ auto LarStandaloneRunner::operator()(VecSED const& sed) -> VecBTR
 
     std::vector<celeritas::optical::GeneratorDistributionData> gdd;
     gdd.reserve(sed.size());
-
-    auto geo = celeritas::global_geant_geo().lock();
-    CELER_VALIDATE(geo, << "global Geant4 geometry is not loaded");
 
     for (auto const& edep : sed)
     {
@@ -64,7 +61,7 @@ auto LarStandaloneRunner::operator()(VecSED const& sed) -> VecBTR
             = convert_from_larsoft<LarsoftTime>(edep.EndT());
         data.points[StepPoint::post].pos
             = convert_from_larsoft<LarsoftLen>(edep.End());
-        data.material = geo->find_opt_mat_at(data.points[StepPoint::pre].pos);
+        data.material = find_optmat_(data.points[StepPoint::pre].pos);
         CELER_ASSERT(data);
         gdd.push_back(data);
     }

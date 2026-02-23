@@ -19,6 +19,9 @@
 #include "geocel/ScopedGeantExceptionHandler.hh"
 #include "geocel/UnitUtils.hh"
 #include "geocel/g4/Convert.hh"
+#include "celeritas/ext/OptMatIdFinder.hh"
+#include "celeritas/optical/CoreParams.hh"
+#include "celeritas/optical/Transporter.hh"
 #include "accel/LocalOpticalGenOffload.hh"
 #include "accel/SetupOptions.hh"
 #include "accel/detail/IntegrationSingleton.hh"
@@ -207,7 +210,8 @@ void LSOOSteppingAction::UserSteppingAction(G4Step const* step)
 
     constexpr double clhep_time{1 / units::nanosecond};
 
-    auto& local = detail::IntegrationSingleton::instance().local_offload();
+    auto& integration = detail::IntegrationSingleton::instance();
+    auto& local = integration.local_offload();
     if (!local)
     {
         // Offloading is disabled
@@ -242,8 +246,8 @@ void LSOOSteppingAction::UserSteppingAction(G4Step const* step)
         return;
     }
 
-    auto geo = celeritas::global_geant_geo().lock();
-    CELER_VALIDATE(geo, << "global Geant4 geometry is not loaded");
+    auto const& loaded = integration.shared_params().optical_problem_loaded();
+    OptMatIdFinder find_optmat(*loaded.transporter->params()->geometry());
 
     auto* pre_step = step->GetPreStepPoint();
     auto* post_step = step->GetPostStepPoint();
@@ -262,7 +266,7 @@ void LSOOSteppingAction::UserSteppingAction(G4Step const* step)
     post.speed = units::LightSpeed(post_step->GetBeta());
     post.time = convert_from_geant(post_step->GetGlobalTime(), clhep_time);
     post.pos = convert_from_geant(post_step->GetPosition(), clhep_length);
-    data.material = geo->find_opt_mat_at(pre.pos);
+    data.material = find_optmat(pre.pos);
 
     auto& gen_offload = dynamic_cast<LocalOpticalGenOffload&>(local);
     if (num_cherenkov > 0)
