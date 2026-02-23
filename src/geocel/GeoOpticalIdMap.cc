@@ -7,6 +7,7 @@
 #include "GeoOpticalIdMap.hh"
 
 #include <G4Material.hh>
+#include <G4MaterialTable.hh>
 
 #include "corecel/cont/Range.hh"
 
@@ -16,7 +17,7 @@ namespace celeritas
 /*!
  * Construct from underlying Geant4 objects.
  */
-GeoOpticalIdMap::GeoOpticalIdMap(G4MaterialTable const& mt)
+GeoOpticalIdMap::GeoOpticalIdMap(std::vector<G4Material*> const& mt)
     : geo_to_opt_{mt.size()}
 {
     OptMatId::size_type next_id{0};

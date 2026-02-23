@@ -7,9 +7,10 @@
 #pragma once
 
 #include <vector>
-#include <G4MaterialTable.hh>
 
 #include "geocel/Types.hh"
+
+class G4Material;
 
 namespace celeritas
 {
@@ -34,7 +35,7 @@ class GeoOpticalIdMap
     GeoOpticalIdMap() = default;
 
     // Construct from underlying Geant4 objects
-    explicit GeoOpticalIdMap(G4MaterialTable const&);
+    explicit GeoOpticalIdMap(std::vector<G4Material*> const&);
 
     // Return the optical ID corresponding to a geo ID
     inline OptMatId operator[](GeoMatId) const;

@@ -12,6 +12,7 @@
 
 #include "corecel/Assert.hh"
 #include "corecel/io/Logger.hh"
+#include "celeritas/optical/CoreParams.hh"
 #include "celeritas/optical/Runner.hh"
 
 #include "Convert.hh"
@@ -24,7 +25,7 @@ namespace celeritas
  */
 LarStandaloneRunner::LarStandaloneRunner(Input&& i)
     : runner_(std::make_shared<optical::Runner>(std::move(i)))
-    , find_optmat_(runner_.params().geometry())
+    , find_optmat_(*runner_->params()->geometry())
 {
 }
 
