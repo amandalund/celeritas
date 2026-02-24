@@ -17,6 +17,7 @@ namespace sim
 {
 class SimEnergyDeposit;
 class OpDetBacktrackerRecord;
+class OBTRHelper;
 }  // namespace sim
 
 namespace celeritas
@@ -61,11 +62,12 @@ class LarStandaloneRunner
     using VecSED = std::vector<sim::SimEnergyDeposit>;
     using VecBTR = std::vector<sim::OpDetBacktrackerRecord>;
     using Input = inp::OpticalStandaloneInput;
+    using VecReal3 = std::vector<Real3>;
     //!@}
 
   public:
-    // Set up the problem
-    explicit LarStandaloneRunner(Input&&);
+    // Set up the problem, including detector ID coordinates
+    LarStandaloneRunner(Input&&, VecReal3 const& det_coords);
     // Don't allow copies of this class
     CELER_DEFAULT_MOVE_DELETE_COPY(LarStandaloneRunner);
 
@@ -73,8 +75,17 @@ class LarStandaloneRunner
     VecBTR operator()(VecSED const& edep);
 
   private:
+    using SpanCelerHits = Span<optical::DetectorHit const>;
+    using VecDetectorId = std::vector<DetectorId>;
 
     std::shared_ptr<optical::Runner> runner_;
+    // Celeritas detector ID for each LArSoft detector channel
+    VecDetectorId detids_;
+    // Hit recorders for each celeritas detector ID
+    std::vector<std::unique_ptr<sim::OBTRHelper>> btr_helpers_;
+
+    // TODO: btr helper
+    void hit(SpanCelerHits);
 };
 
 //---------------------------------------------------------------------------//

@@ -9,11 +9,15 @@
 #include <memory>
 #include <lardataobj/Simulation/OpDetBacktrackerRecord.h>
 #include <lardataobj/Simulation/SimEnergyDeposit.h>
+#include <larcore/CoreUtils/ServiceUtil.h>
+#include <larcore/Geometry/Geometry.h>
 
 #include "corecel/Assert.hh"
 #include "celeritas/inp/StandaloneInput.hh"
 
 #include "LarStandaloneRunner.hh"
+#include "larceler/Convert.hh"
+
 
 namespace celeritas
 {
@@ -56,6 +60,7 @@ make_input_from_config(detail::LarCelerStandaloneConfig const& cfg)
 }
 }  // namespace
 
+
 //---------------------------------------------------------------------------//
 /*!
  * Construct with fcl parameters.
@@ -72,8 +77,21 @@ LarCelerStandalone::LarCelerStandalone(Parameters const& config)
 void LarCelerStandalone::beginJob()
 {
     CELER_EXPECT(!runner_);
+
+    // Load geometry to find detector points
+    auto* geo = lar::providerFrom<geo::Geometry>();
+    CELER_ASSERT(geo);
+    std::vector<Real3> positions;
+    for (unsigned int i = 0; i < geo->NOpDets(); i++)
+    {
+        auto const& opdet = geo->OpDetGeoFromOpDet(i);
+        positions.push_back(
+            convert_from_larsoft<LarsoftLen>(opdet.GetCenter()));
+    }
+
     runner_ = std::make_unique<LarStandaloneRunner>(
-        std::forward<LarStandaloneRunner::Input>(runner_inp_));
+        std::forward<LarStandaloneRunner::Input>(runner_inp_),
+        std::move(positions));
 }
 
 //---------------------------------------------------------------------------//
