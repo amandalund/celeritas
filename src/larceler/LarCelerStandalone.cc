@@ -7,17 +7,16 @@
 #include "LarCelerStandalone.hh"
 
 #include <memory>
-#include <lardataobj/Simulation/OpDetBacktrackerRecord.h>
-#include <lardataobj/Simulation/SimEnergyDeposit.h>
 #include <larcore/CoreUtils/ServiceUtil.h>
 #include <larcore/Geometry/Geometry.h>
+#include <lardataobj/Simulation/OpDetBacktrackerRecord.h>
+#include <lardataobj/Simulation/SimEnergyDeposit.h>
 
 #include "corecel/Assert.hh"
 #include "celeritas/inp/StandaloneInput.hh"
 
 #include "LarStandaloneRunner.hh"
 #include "larceler/Convert.hh"
-
 
 namespace celeritas
 {
@@ -59,7 +58,6 @@ make_input_from_config(detail::LarCelerStandaloneConfig const& cfg)
     return result;
 }
 }  // namespace
-
 
 //---------------------------------------------------------------------------//
 /*!
