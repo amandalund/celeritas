@@ -101,6 +101,7 @@ celeritas_target_link_libraries(GeoSimExporter_module
     larcorealg::Geometry
     larcoreobj::SimpleTypesAndConstants # Implicit dependency needed by MCBase
     lardataobj::MCBase
+    Celeritas::corecel
 )
 
 #-----------------------------------------------------------------------------#
