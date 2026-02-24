@@ -153,7 +153,7 @@ auto LarStandaloneRunner::operator()(VecSED const& sed) -> VecBTR
 /*!
  * Convert Celeritas hits to optical backtracker records.
  */
-void LarStandaloneRunner::hit(Span<optical::DetectorHit const> hits)
+void LarStandaloneRunner::hit(SpanCelerHits hits)
 {
     CELER_LOG(info) << "Processing " << hits.size() << "hits";
     for (auto& h : hits)

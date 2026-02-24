@@ -10,8 +10,10 @@
 #include <vector>
 
 #include "corecel/Macros.hh"
+#include "corecel/cont/Span.hh"
 #include "corecel/math/Quantity.hh"
 #include "celeritas/UnitTypes.hh"
+#include "celeritas/optical/DetectorData.hh"
 
 namespace sim
 {

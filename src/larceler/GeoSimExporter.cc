@@ -19,6 +19,8 @@
 #include <lardataobj/Simulation/SimEnergyDeposit.h>
 #include <messagefacility/MessageLogger/MessageLogger.h>
 
+#include "corecel/Assert.hh"
+
 namespace celeritas
 {
 //---------------------------------------------------------------------------//
