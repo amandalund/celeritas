@@ -15,12 +15,12 @@
 #include "corecel/Macros.hh"
 #include "corecel/io/Logger.hh"
 #include "geocel/DetectorParams.hh"
-#include "geocel/GeantGeoParams.hh"
 #include "geocel/Types.hh"
 #include "geocel/VolumeParams.hh"
 #include "geocel/detail/LengthUnits.hh"
 #include "celeritas/Quantities.hh"
 #include "celeritas/Types.hh"
+#include "celeritas/geo/CoreGeoParams.hh"
 #include "celeritas/inp/StandaloneInput.hh"
 #include "celeritas/optical/CoreParams.hh"
 #include "celeritas/optical/Runner.hh"
@@ -44,12 +44,9 @@ LarStandaloneRunner::LarStandaloneRunner(Input&& i, VecReal3 const& det_coords)
     runner_ = std::make_shared<optical::Runner>(std::move(i));
 
     // Map detector coordinates
-    // TODO: probably better to use native geometry than G4
-    // auto geo = runner_->params()->geometry();
-    auto geo = global_geant_geo().lock();
+    auto geo = runner_->params()->geometry();
     CELER_ASSERT(geo);
-    // TODO: volumes should be in the params
-    auto vols = global_volumes().lock();
+    auto vols = runner_->params()->volume();
     CELER_ASSERT(vols);
     auto dets = runner_->params()->detectors();
     CELER_ASSERT(dets);
