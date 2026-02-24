@@ -33,6 +33,7 @@
 #include <G4NuclearFormfactorType.hh>
 #include <G4NucleiProperties.hh>
 #include <G4OpAbsorption.hh>
+#include <G4OpBoundaryProcess.hh>
 #include <G4OpMieHG.hh>
 #include <G4OpRayleigh.hh>
 #include <G4OpWLS.hh>
@@ -706,14 +707,15 @@ import_optical_materials(detail::GeoOpticalIdMap const& geo_to_opt)
 /*!
  * Import optical surface physics information.
  */
-inp::SurfacePhysics import_optical_surface_physics()
+inp::SurfacePhysics
+import_optical_surface_physics(std::vector<ImportOpticalMaterial>& materials)
 {
     inp::SurfacePhysics result;
     auto geo = celeritas::global_geant_geo().lock();
     CELER_VALIDATE(geo, << "global Geant4 geometry is not loaded");
 
     MultiExceptionHandler handle;
-    detail::GeantSurfacePhysicsLoader load_surface(result);
+    detail::GeantSurfacePhysicsLoader load_surface(result, materials);
     for (auto sid : range(SurfaceId(geo->num_surfaces())))
     {
         CELER_TRY_HANDLE(load_surface(sid), handle);
@@ -1031,6 +1033,13 @@ auto import_processes(GeantImporter::DataSelection selected,
         {
             optical_models.push_back(
                 import_optical_model(optical::ImportModelClass::mie));
+        }
+        else if (import_optical_model
+                 && dynamic_cast<G4OpBoundaryProcess const*>(&process))
+        {
+            // Surface physics importing handled separately from volumetric
+            // discrete importing
+            CELER_DISCARD(process);
         }
 
 #if G4VERSION_NUMBER >= 1070
@@ -1459,7 +1468,7 @@ ImportData GeantImporter::operator()(DataSelection const& selected)
         {
             imported.optical_params = import_optical_parameters();
             imported.optical_physics.surfaces
-                = import_optical_surface_physics();
+                = import_optical_surface_physics(imported.optical_materials);
         }
     }
 

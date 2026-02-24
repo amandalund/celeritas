@@ -88,6 +88,9 @@ LarStandaloneRunner::LarStandaloneRunner(Input&& i, VecReal3 const& det_coords)
 /*!
  * Run scintillation optical photons from a single set of energy steps.
  *
+ * The optical material is determined in Celeritas when the tracks are
+ * initialized from the pre-step position.
+ *
  * \todo With Cherenkov enabled we would need to determine the incident
  * particle's charge and the pre- and post-step speed.
  */
@@ -107,8 +110,6 @@ auto LarStandaloneRunner::operator()(VecSED const& sed) -> VecBTR
         data.num_photons = edep.NumPhotons();
         data.primary = id_cast<PrimaryId>(edep.TrackID());
         data.step_length = convert_from_larsoft<LarsoftLen>(edep.StepLength());
-        //! XXX Given post-step point find optical material
-        data.material = OptMatId{0};
         // Assume continuous energy loss along the step
         //! \todo For neutral particles, set this to 0 (LED at post-step
         //! point)
@@ -121,7 +122,6 @@ auto LarStandaloneRunner::operator()(VecSED const& sed) -> VecBTR
             = convert_from_larsoft<LarsoftTime>(edep.EndT());
         data.points[StepPoint::post].pos
             = convert_from_larsoft<LarsoftLen>(edep.End());
-        CELER_ASSERT(data);
         gdd.push_back(data);
     }
 
