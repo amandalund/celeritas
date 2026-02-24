@@ -6,8 +6,7 @@
 # NOTE: the library should *not* contain any `art` dependencies
 set(SOURCES)
 set(PRIVATE_DEPS
-  larcoreobj::SimpleTypesAndConstants # Implicit dependency needed by MCBase
-  lardataobj::MCBase
+  lardataobj::Simulation
   Celeritas::geocel
   Celeritas::celeritas
   ROOT::Tree
@@ -83,8 +82,9 @@ celeritas_target_link_libraries(LarCelerStandalone_tool
     cetlib_except::cetlib_except
     fhiclcpp::fhiclcpp
     art::Utilities
-    larcoreobj::SimpleTypesAndConstants # Implicit dependency needed by MCBase
-    lardataobj::MCBase
+    larcore::ServiceUtil
+    larcorealg::Geometry
+    lardataobj::Simulation
     ${_larsoft_tool_target}
   PUBLIC
     Celeritas::larceler
@@ -99,8 +99,7 @@ celeritas_target_link_libraries(GeoSimExporter_module
     art_root_io::TFileService_service
     larcore::ServiceUtil
     larcorealg::Geometry
-    larcoreobj::SimpleTypesAndConstants # Implicit dependency needed by MCBase
-    lardataobj::MCBase
+    lardataobj::Simulation
     Celeritas::corecel
 )
 
