@@ -26,7 +26,7 @@
 #include "orange/OrangeInput.hh"
 #include "orange/OrangeParams.hh"
 #include "orange/detail/UniverseIndexer.hh"
-#include "orange/surf/SimpleQuadric.hh"
+#include "orange/surf/ConeAligned.hh"
 #include "orange/surf/Sphere.hh"
 #include "orange/univ/detail/LocalVolumeView.hh"
 
@@ -149,17 +149,16 @@ class FiveVolumesTest : public SimpleUnitTrackerTest
     void SetUp() override { this->build_geometry("five-volumes.org.json"); }
 };
 
-//! Ellipsoid (not a "simple safety" surface) in a background-filled sphere
-class BackgroundQuadricTest : public SimpleUnitTrackerTest
+//! Cone (not a "simple safety" surface) in a background-filled sphere
+class BackgroundConeTest : public SimpleUnitTrackerTest
 {
     void SetUp() override
     {
         UnitInput input;
-        input.label = "background quadric";
+        input.label = "background cone";
         input.bbox = {{-4, -4, -4}, {4, 4, 4}};
-        input.surfaces = {Sphere({0, 0, 0}, 4),
-                          SimpleQuadric({1, 1, 0.25}, {0, 0, 0}, -1)};
-        input.surface_labels = {Label("world"), Label("ellipsoid")};
+        input.surfaces = {Sphere({0, 0, 0}, 4), ConeZ({0, 0, 0}, 0.5)};
+        input.surface_labels = {Label("world"), Label("cone")};
 
         VolumeInput exterior;
         exterior.label = "exterior";
@@ -168,19 +167,19 @@ class BackgroundQuadricTest : public SimpleUnitTrackerTest
         exterior.bbox = BBox::from_infinite();
         exterior.zorder = ZOrder::exterior;
 
-        VolumeInput ellipsoid;
-        ellipsoid.label = "ellipsoid";
-        ellipsoid.faces = {LocalSurfaceId{1}};
-        ellipsoid.logic = {1, logic::lnot};
-        ellipsoid.bbox = {{-1, -1, -2}, {1, 1, 2}};
-        ellipsoid.zorder = ZOrder::media;
+        VolumeInput cone;
+        cone.label = "cone";
+        cone.faces = {LocalSurfaceId{1}};
+        cone.logic = {1, logic::lnot};
+        cone.bbox = {{-2, -2, -4}, {2, 2, 4}};
+        cone.zorder = ZOrder::media;
 
         VolumeInput background;
         background.label = "background";
         background.flags = VolumeInput::Flags::implicit_vol;
         background.zorder = ZOrder::background;
 
-        input.volumes = {exterior, ellipsoid, background};
+        input.volumes = {exterior, cone, background};
         this->build_geometry(std::move(input));
     }
 };
@@ -1048,7 +1047,7 @@ TEST_F(FiveVolumesTest, TEST_IF_CELERITAS_DOUBLE(heuristic_init))
 
 //---------------------------------------------------------------------------//
 
-TEST_F(BackgroundQuadricTest, safety)
+TEST_F(BackgroundConeTest, safety)
 {
     SimpleUnitTracker tracker(this->host_params(), SimpleUnitId{0});
     detail::UniverseIndexer ui(this->host_params().univ_indexer_data);
