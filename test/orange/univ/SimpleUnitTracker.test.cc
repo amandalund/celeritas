@@ -1047,7 +1047,10 @@ TEST_F(FiveVolumesTest, TEST_IF_CELERITAS_DOUBLE(heuristic_init))
 
 //---------------------------------------------------------------------------//
 
-TEST_F(BackgroundConeTest, safety)
+// TODO: cones now support simple safety, and no other runtime surface type in
+// a default build lacks it (involutes have no runtime support and toroids are
+// optional). Replace this fixture's surface or remove the test.
+TEST_F(BackgroundConeTest, DISABLED_safety)
 {
     SimpleUnitTracker tracker(this->host_params(), SimpleUnitId{0});
     detail::UniverseIndexer ui(this->host_params().univ_indexer_data);
